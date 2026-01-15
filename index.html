@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Truck: Comparative Advantage</title>
+    <style>
+        :root {
+            --orange-truck: #F5A623;
+            --blue-truck: #4A90E2;
+            --bg-color: #FDF1D6;
+            --card-bg: #FFFFFF;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+            padding: 30px;
+            text-align: center;
+        }
+        h1, h2 { color: #333; }
+        .hidden { display: none; }
+        
+        /* Dashboard Styles */
+        .dashboard {
+            display: flex;
+            justify-content: space-between;
+            background: #eee;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid var(--blue-truck);
+        }
+        .stat-box {
+            flex: 1;
+            font-weight: bold;
+        }
+        
+        /* Slider Section */
+        .slider-group {
+            margin: 30px 0;
+            padding: 20px;
+            background: #FFF8E1;
+            border-radius: 10px;
+            border: 2px solid var(--orange-truck);
+        }
+        input[type=range] {
+            width: 80%;
+            margin: 15px 0;
+        }
+        
+        /* Button Styles */
+        .btn {
+            background-color: var(--blue-truck);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn:hover { background-color: #357ABD; }
+        .btn-orange { background-color: var(--orange-truck); }
+        .btn-orange:hover { background-color: #D48806; }
+
+        /* Trade Interface */
+        .trade-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .trade-input {
+            width: 60px;
+            padding: 5px;
+            text-align: center;
+            font-size: 1.1em;
+        }
+        
+        /* Loading Animation */
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--orange-truck);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .chat-box {
+            height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 15px;
+            background: #fafafa;
+            text-align: left;
+        }
+        .msg-bot { color: var(--blue-truck); font-weight: bold; }
+        .msg-user { color: var(--orange-truck); font-weight: bold; text-align: right; display: block;}
+    </style>
+</head>
+<body>
+
+<div class="container" id="game-container">
+    
+    <div id="screen-intro">
+        <h1>Food Truck Challenge</h1>
+        <p>You manage a food truck. You have <strong>30 minutes</strong> to prepare food.</p>
+        <p>Your Goal: Maximize <strong>COMBOS</strong> (1 Burger + 1 Fry).</p>
+        <div class="dashboard">
+            <div class="stat-box">Your Productivity: <br> <span id="prod-rate"></span></div>
+        </div>
+        <button class="btn" onclick="startGame()">Start Production</button>
+    </div>
+
+    <div id="screen-production" class="hidden">
+        <h2>Morning Prep Phase</h2>
+        <p>Allocate your 30 minutes.</p>
+        
+        <div class="slider-group">
+            <label>Time on Burgers: <span id="time-b-val">15</span> min</label><br>
+            <input type="range" id="time-slider" min="0" max="30" value="15" oninput="updateProduction()">
+            <br>
+            <label>Time on Fries: <span id="time-f-val">15</span> min</label>
+        </div>
+
+        <div class="dashboard">
+            <div class="stat-box">Burgers Made: <span id="prod-b">0</span></div>
+            <div class="stat-box">Fries Made: <span id="prod-f">0</span></div>
+            <div class="stat-box" style="color:red">Current Combos: <span id="prod-c">0</span></div>
+        </div>
+
+        <button class="btn btn-orange" onclick="submitProduction()">Confirm Production</button>
+    </div>
+
+    <div id="screen-connecting" class="hidden">
+        <h2>Connecting to Classmate...</h2>
+        <div class="loader"></div>
+        <p id="connect-msg">Searching for available partner...</p>
+    </div>
+
+    <div id="screen-trade" class="hidden">
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+            <div style="text-align:left;">
+                <strong>Your Inventory:</strong><br>
+                🍔 <span id="inv-b">0</span> | 🍟 <span id="inv-f">0</span>
+            </div>
+            <div style="text-align:right;">
+                <strong>Partner's Inventory:</strong><br>
+                Hidden
+            </div>
+        </div>
+
+        <div class="chat-box" id="trade-log">
+            <div class="msg-bot">System: You are connected with "Truck_882"</div>
+        </div>
+
+        <div class="trade-row">
+            <span>I offer</span>
+            <input type="number" id="offer-give-amt" class="trade-input" min="1">
+            <select id="offer-give-type" class="trade-input" style="width:100px;">
+                <option value="burgers">Burgers</option>
+                <option value="fries">Fries</option>
+            </select>
+            <span>for</span>
+            <input type="number" id="offer-get-amt" class="trade-input" min="1">
+            <select id="offer-get-type" class="trade-input" style="width:100px;">
+                <option value="fries">Fries</option>
+                <option value="burgers">Burgers</option>
+            </select>
+        </div>
+
+        <button class="btn" onclick="proposeTrade()">Propose Trade</button>
+        <button class="btn btn-orange" onclick="finishGame()">Finish & Calculate Score</button>
+    </div>
+
+    <div id="screen-results" class="hidden">
+        <h1>Final Results</h1>
+        <div class="dashboard">
+            <div class="stat-box">Original Combos<br><span id="res-orig">0</span></div>
+            <div class="stat-box">Final Combos<br><span id="res-final">0</span></div>
+            <div class="stat-box">Gain from Trade<br><span id="res-gain" style="color:green">+0</span></div>
+        </div>
+        <p id="res-msg"></p>
+        <button class="btn" onclick="location.reload()">Play Again</button>
+    </div>
+
+</div>
+
+<script>
+    // GAME STATE
+    let myProd = { b_rate: 4, f_rate: 8 }; // Student makes 4 Burgers or 8 Fries per min
+    let botProd = { b_rate: 6, f_rate: 2 }; // Bot makes 6 Burgers or 2 Fries per min (Comparative Adv in Burgers)
+    
+    let inventory = { b: 0, f: 0 };
+    let botInventory = { b: 0, f: 0 };
+    let initialCombos = 0;
+
+    // 1. SETUP & RANDOMIZATION
+    function init() {
+        // Randomize rates slightly to keep it fresh
+        if(Math.random() > 0.5) {
+            myProd = { b_rate: 2, f_rate: 8 };  // Student good at Fries
+            botProd = { b_rate: 6, f_rate: 3 }; // Bot good at Burgers
+        } else {
+            myProd = { b_rate: 6, f_rate: 2 };  // Student good at Burgers
+            botProd = { b_rate: 3, f_rate: 9 }; // Bot good at Fries
+        }
+        document.getElementById('prod-rate').innerText = `1 min = ${myProd.b_rate} Burgers OR ${myProd.f_rate} Fries`;
+    }
+
+    function startGame() {
+        showScreen('screen-production');
+        updateProduction();
+    }
+
+    // 2. PRODUCTION LOGIC
+    function updateProduction() {
+        let t_b = parseInt(document.getElementById('time-slider').value);
+        let t_f = 30 - t_b;
+        
+        document.getElementById('time-b-val').innerText = t_b;
+        document.getElementById('time-f-val').innerText = t_f;
+
+        let b_count = t_b * myProd.b_rate;
+        let f_count = t_f * myProd.f_rate;
+        let combos = Math.min(b_count, f_count);
+
+        document.getElementById('prod-b').innerText = b_count;
+        document.getElementById('prod-f').innerText = f_count;
+        document.getElementById('prod-c').innerText = combos;
+    }
+
+    function submitProduction() {
+        let t_b = parseInt(document.getElementById('time-slider').value);
+        inventory.b = t_b * myProd.b_rate;
+        inventory.f = (30 - t_b) * myProd.f_rate;
+        initialCombos = Math.min(inventory.b, inventory.f);
+
+        // Generate Bot Production (Optimized for their advantage, then mixed slightly)
+        // Bot will specialize in their comparative advantage
+        let botTb = (botProd.b_rate > botProd.f_rate) ? 25 : 5; 
+        botInventory.b = botTb * botProd.b_rate;
+        botInventory.f = (30 - botTb) * botProd.f_rate;
+
+        showScreen('screen-connecting');
+        
+        // Fake Waiting Time
+        setTimeout(() => { document.getElementById('connect-msg').innerText = "Found a partner!"; }, 2000);
+        setTimeout(() => { 
+            showScreen('screen-trade'); 
+            updateInventoryUI();
+        }, 4000);
+    }
+
+    // 3. TRADING LOGIC
+    function updateInventoryUI() {
+        document.getElementById('inv-b').innerText = inventory.b;
+        document.getElementById('inv-f').innerText = inventory.f;
+    }
+
+    function proposeTrade() {
+        let giveAmt = parseInt(document.getElementById('offer-give-amt').value);
+        let giveType = document.getElementById('offer-give-type').value;
+        let getAmt = parseInt(document.getElementById('offer-get-amt').value);
+        let getType = document.getElementById('offer-get-type').value;
+
+        if (!giveAmt || !getAmt) return;
+
+        // Log the user offer
+        let log = document.getElementById('trade-log');
+        log.innerHTML += `<div class="msg-user">You: Offer ${giveAmt} ${giveType} for ${getAmt} ${getType}</div>`;
+
+        // Validation: Do you have the goods?
+        let currentStock = (giveType === 'burgers') ? inventory.b : inventory.f;
+        if (currentStock < giveAmt) {
+            log.innerHTML += `<div class="msg-bot">System: You don't have enough ${giveType}!</div>`;
+            return;
+        }
+
+        // ROBOT DECISION LOGIC
+        // 1. Calculate Implied Price (Exchange Ratio)
+        // 2. Check if Bot has the goods
+        // 3. Check if Bot is better off (Post-trade combos > Pre-trade combos)
+
+        let botHasGoods = (getType === 'burgers') ? botInventory.b >= getAmt : botInventory.f >= getAmt;
+        
+        if (!botHasGoods) {
+            setTimeout(() => {
+                log.innerHTML += `<div class="msg-bot">Partner: "I don't have enough items to make that trade."</div>`;
+                log.scrollTop = log.scrollHeight;
+            }, 1000);
+            return;
+        }
+
+        // Calculate Bot's projected inventory
+        let botNewB = botInventory.b;
+        let botNewF = botInventory.f;
+
+        if (getType === 'burgers') { // User wants Burgers (Bot gives Burgers)
+            botNewB -= getAmt;
+            botNewF += giveAmt;
+        } else { // User wants Fries (Bot gives Fries)
+            botNewF -= getAmt;
+            botNewB += giveAmt;
+        }
+
+        let botCurrentCombos = Math.min(botInventory.b, botInventory.f);
+        let botNewCombos = Math.min(botNewB, botNewF);
+
+        // DECISION
+        setTimeout(() => {
+            if (botNewCombos > botCurrentCombos) {
+                // ACCEPT
+                log.innerHTML += `<div class="msg-bot">Partner: "Deal! Accepted."</div>`;
+                
+                // Update User
+                if (giveType === 'burgers') { inventory.b -= giveAmt; inventory.f += getAmt; }
+                else { inventory.f -= giveAmt; inventory.b += getAmt; }
+
+                // Update Bot
+                botInventory.b = botNewB;
+                botInventory.f = botNewF;
+
+                updateInventoryUI();
+            } else {
+                // REJECT
+                log.innerHTML += `<div class="msg-bot">Partner: "No thanks. That doesn't help me."</div>`;
+            }
+            log.scrollTop = log.scrollHeight;
+        }, 1500);
+    }
+
+    function finishGame() {
+        showScreen('screen-results');
+        let finalCombos = Math.min(inventory.b, inventory.f);
+        document.getElementById('res-orig').innerText = initialCombos;
+        document.getElementById('res-final').innerText = finalCombos;
+        
+        let diff = finalCombos - initialCombos;
+        let el = document.getElementById('res-gain');
+        el.innerText = (diff >= 0 ? "+" : "") + diff;
+        el.style.color = diff >= 0 ? "green" : "red";
+
+        let msg = (diff > 0) ? "Great job! You beat your original production through trade." : "You didn't improve your outcome. Remember to trade what is 'cheap' for you to make!";
+        document.getElementById('res-msg').innerText = msg;
+    }
+
+    function showScreen(id) {
+        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
+        document.getElementById(id).classList.remove('hidden');
+    }
+
+    // Initialize on load
+    init();
+</script>
+
+</body>
+</html>
