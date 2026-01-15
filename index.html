@@ -1,377 +1,797 @@
+This is a significant visual upgrade. I have redesigned the code to match the MobLab aesthetic seen in your screenshots (the orange/blue color scheme, the layout, and the specific "Per Minute Production" bar).
+
+I have also structured it into **two distinct games (rounds)** as you requested:
+
+1. **Round 1 (No Trade):** The student allocates time and sees their score compared to the "Optimal" solution.
+2. **Round 2 (Trade):** The student allocates time, then enters the trading room with the robot.
+
+### **The Visual "Clone" Code (`index.html`)**
+
+Save this code as `index.html`. It includes embedded SVG graphics so you don't need to download any separate image files—it will work instantly.
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Food Truck: Comparative Advantage</title>
+    <title>Food Truck Challenge: Comparative Advantage</title>
     <style>
+        /* --- VISUAL THEME FROM SCREENSHOTS --- */
         :root {
             --orange-truck: #F5A623;
+            --orange-dark: #D48806;
             --blue-truck: #4A90E2;
-            --bg-color: #FDF1D6;
-            --card-bg: #FFFFFF;
+            --bg-color: #FDF1D6; /* Creamy background from screenshot */
+            --text-dark: #333;
+            --panel-white: #ffffff;
+            --green-btn: #00BFA5; /* MobLab teal button */
+            --green-btn-hover: #009688;
         }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             margin: 0;
-            padding: 20px;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            color: var(--text-dark);
         }
-        .container {
+
+        /* --- LAYOUT CONTAINERS --- */
+        .game-container {
             width: 100%;
-            max-width: 800px;
-            background: var(--card-bg);
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            overflow: hidden;
-            padding: 30px;
+            max-width: 900px;
+            margin-top: 20px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .screen {
+            display: none; /* Hidden by default */
+            animation: fadeIn 0.5s;
+        }
+
+        .active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- COMPONENT: TOP PRODUCTION BAR --- */
+        .production-bar-container {
+            background: transparent;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .production-label {
+            font-size: 0.9rem;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        .production-bar {
+            border: 2px solid var(--blue-truck);
+            border-radius: 10px;
+            background: transparent;
+            padding: 10px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .prod-divider {
+            color: #777;
+            font-size: 0.9rem;
+            font-weight: normal;
+        }
+
+        /* --- COMPONENT: MAIN GAME AREA (TRUCK & SLIDERS) --- */
+        .game-area {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 40px;
+            align-items: flex-start;
+        }
+
+        .truck-illustration {
+            width: 300px;
+            position: relative;
+        }
+        
+        /* CSS Drawing of Food Truck to match screenshot style */
+        .css-truck {
+            position: relative;
+            width: 280px;
+            height: 160px;
+        }
+        .truck-body {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 240px;
+            height: 100px;
+            background-color: var(--orange-truck);
+            border-radius: 10px 10px 0 0;
+        }
+        .truck-cab {
+            position: absolute;
+            bottom: 20px;
+            right: 0;
+            width: 50px;
+            height: 70px;
+            background-color: var(--orange-truck);
+            border-radius: 0 15px 15px 0;
+        }
+        .truck-window {
+            position: absolute;
+            top: 10px;
+            right: 5px;
+            width: 35px;
+            height: 35px;
+            background-color: #87CEEB;
+            border-radius: 0 10px 0 0;
+        }
+        .truck-awning {
+            position: absolute;
+            top: 30px;
+            left: -10px;
+            width: 200px;
+            height: 15px;
+            background-color: #FFF;
+            border-radius: 5px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+        }
+        .truck-wheel {
+            position: absolute;
+            bottom: 0;
+            width: 40px;
+            height: 40px;
+            background-color: #333;
+            border: 5px solid #555;
+            border-radius: 50%;
+        }
+        .wheel-1 { left: 30px; }
+        .wheel-2 { right: 20px; }
+
+        /* --- INPUTS & CONTROLS --- */
+        .controls-panel {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            background: #fff;
+            padding: 10px 15px;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .time-box {
+            background: #fff;
+            border: 2px solid var(--green-btn);
+            color: var(--text-dark);
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            min-width: 80px;
             text-align: center;
         }
-        h1, h2 { color: #333; }
-        .hidden { display: none; }
         
-        /* Dashboard Styles */
-        .dashboard {
-            display: flex;
-            justify-content: space-between;
-            background: #eee;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            border: 2px solid var(--blue-truck);
-        }
-        .stat-box {
+        .slider-container {
             flex: 1;
-            font-weight: bold;
+            margin: 0 15px;
         }
         
-        /* Slider Section */
-        .slider-group {
-            margin: 30px 0;
-            padding: 20px;
-            background: #FFF8E1;
-            border-radius: 10px;
-            border: 2px solid var(--orange-truck);
-        }
         input[type=range] {
-            width: 80%;
-            margin: 15px 0;
+            width: 100%;
+            cursor: pointer;
         }
-        
-        /* Button Styles */
-        .btn {
-            background-color: var(--blue-truck);
+
+        .output-box {
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 8px 20px;
+            min-width: 60px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .food-icon { font-size: 1.5rem; }
+
+        /* --- BUTTONS --- */
+        .btn-main {
+            background-color: var(--green-btn);
             color: white;
             border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            border-radius: 5px;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 8px;
             cursor: pointer;
-            transition: background 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+            display: block;
+            margin: 30px auto;
         }
-        .btn:hover { background-color: #357ABD; }
-        .btn-orange { background-color: var(--orange-truck); }
-        .btn-orange:hover { background-color: #D48806; }
+        .btn-main:hover {
+            background-color: var(--green-btn-hover);
+            transform: translateY(-2px);
+        }
 
-        /* Trade Interface */
-        .trade-row {
+        /* --- RESULTS TABLE --- */
+        .results-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .comparison-table th {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 2px solid #ddd;
+            color: #666;
+        }
+        .comparison-table td {
+            padding: 15px 10px;
+            border-bottom: 1px solid #eee;
+            font-size: 1.1rem;
+        }
+        .highlight-score {
+            font-size: 1.5rem;
+            color: var(--orange-dark);
+            font-weight: bold;
+        }
+
+        /* --- TRADING INTERFACE --- */
+        .trade-dashboard {
+            display: flex;
+            justify-content: space-between;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .inventory-box {
+            text-align: center;
+        }
+        .inventory-val {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .chat-interface {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            height: 250px;
+            overflow-y: scroll;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #FAFAFA;
+        }
+        .msg {
+            padding: 8px 12px;
+            border-radius: 15px;
+            max-width: 70%;
+            font-size: 0.95rem;
+        }
+        .msg-system { align-self: center; background: #eee; color: #555; font-size: 0.8rem; }
+        .msg-partner { align-self: flex-start; background: #E3F2FD; color: #0D47A1; }
+        .msg-me { align-self: flex-end; background: #FFF3E0; color: #E65100; }
+
+        .trade-controls {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 15px;
-            margin: 20px 0;
+            gap: 10px;
+            flex-wrap: wrap;
         }
-        .trade-input {
-            width: 60px;
-            padding: 5px;
-            text-align: center;
-            font-size: 1.1em;
-        }
-        
-        /* Loading Animation */
-        .loader {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid var(--orange-truck);
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        .chat-box {
-            height: 150px;
-            overflow-y: auto;
+        select, input[type=number] {
+            padding: 8px;
             border: 1px solid #ccc;
-            padding: 10px;
-            margin-bottom: 15px;
-            background: #fafafa;
-            text-align: left;
+            border-radius: 5px;
+            font-size: 1rem;
         }
-        .msg-bot { color: var(--blue-truck); font-weight: bold; }
-        .msg-user { color: var(--orange-truck); font-weight: bold; text-align: right; display: block;}
+
     </style>
 </head>
 <body>
 
-<div class="container" id="game-container">
-    
-    <div id="screen-intro">
-        <h1>Food Truck Challenge</h1>
-        <p>You manage a food truck. You have <strong>30 minutes</strong> to prepare food.</p>
-        <p>Your Goal: Maximize <strong>COMBOS</strong> (1 Burger + 1 Fry).</p>
-        <div class="dashboard">
-            <div class="stat-box">Your Productivity: <br> <span id="prod-rate"></span></div>
-        </div>
-        <button class="btn" onclick="startGame()">Start Production</button>
-    </div>
+<div style="text-align: center; margin-top: 20px;">
+    <h2 style="color: #444; margin:0;">Food Truck Challenge</h2>
+    <div id="round-indicator" style="color: #888; font-size: 0.9rem; margin-top: 5px;">Round 1 of 2</div>
+</div>
 
-    <div id="screen-production" class="hidden">
-        <h2>Morning Prep Phase</h2>
-        <p>Allocate your 30 minutes.</p>
-        
-        <div class="slider-group">
-            <label>Time on Burgers: <span id="time-b-val">15</span> min</label><br>
-            <input type="range" id="time-slider" min="0" max="30" value="15" oninput="updateProduction()">
+<div class="game-container">
+
+    <div id="screen-intro" class="screen active" style="text-align: center;">
+        <div class="css-truck" style="margin: 0 auto; transform: scale(0.8);">
+            <div class="truck-body"></div>
+            <div class="truck-cab"></div>
+            <div class="truck-window"></div>
+            <div class="truck-awning"></div>
+            <div class="truck-wheel wheel-1"></div>
+            <div class="truck-wheel wheel-2"></div>
+        </div>
+        <h1>Welcome, Chef!</h1>
+        <p style="font-size: 1.1rem; max-width: 600px; margin: 0 auto 30px;">
+            You run a food truck. Each morning, you have <strong>30 minutes</strong> of prep time.
+            <br><br>
+            You sell <strong>COMBOS</strong> (1 Burger + 1 Fry).
             <br>
-            <label>Time on Fries: <span id="time-f-val">15</span> min</label>
-        </div>
-
-        <div class="dashboard">
-            <div class="stat-box">Burgers Made: <span id="prod-b">0</span></div>
-            <div class="stat-box">Fries Made: <span id="prod-f">0</span></div>
-            <div class="stat-box" style="color:red">Current Combos: <span id="prod-c">0</span></div>
-        </div>
-
-        <button class="btn btn-orange" onclick="submitProduction()">Confirm Production</button>
+            Your goal is to make as many complete combos as possible.
+        </p>
+        <button class="btn-main" onclick="startRound1()">Start Round 1 (No Trade)</button>
     </div>
 
-    <div id="screen-connecting" class="hidden">
-        <h2>Connecting to Classmate...</h2>
-        <div class="loader"></div>
-        <p id="connect-msg">Searching for available partner...</p>
-    </div>
-
-    <div id="screen-trade" class="hidden">
-        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-            <div style="text-align:left;">
-                <strong>Your Inventory:</strong><br>
-                🍔 <span id="inv-b">0</span> | 🍟 <span id="inv-f">0</span>
-            </div>
-            <div style="text-align:right;">
-                <strong>Partner's Inventory:</strong><br>
-                Hidden
+    <div id="screen-production" class="screen">
+        
+        <div class="production-bar-container">
+            <div class="production-label">Your Per Minute Production:</div>
+            <div class="production-bar">
+                <span><span id="rate-f">8</span> 🍟 Fries</span>
+                <span class="prod-divider">- or -</span>
+                <span><span id="rate-b">4</span> 🍔 Burgers</span>
             </div>
         </div>
 
-        <div class="chat-box" id="trade-log">
-            <div class="msg-bot">System: You are connected with "Truck_882"</div>
+        <div class="game-area">
+            <div class="truck-illustration">
+                <div class="css-truck">
+                    <div class="truck-body"></div>
+                    <div class="truck-cab"></div>
+                    <div class="truck-window"></div>
+                    <div class="truck-awning"></div>
+                    <div class="truck-wheel wheel-1"></div>
+                    <div class="truck-wheel wheel-2"></div>
+                </div>
+                <p style="text-align:center; color:#666; margin-top:10px;">Prep Time: 30 min Total</p>
+            </div>
+
+            <div class="controls-panel">
+                <h3>Allocate Prep Time</h3>
+                
+                <div class="control-row">
+                    <div class="time-box"><span id="val-b-time">15</span> m</div>
+                    <div class="slider-container">
+                        <input type="range" id="slider" min="0" max="30" value="15" oninput="updateCalculations()">
+                        <div style="text-align:center; font-size:0.8rem; color:#888; margin-top:5px;">Move slider to adjust</div>
+                    </div>
+                    <div class="output-box">
+                        <span id="val-b-prod">60</span> <span class="food-icon">🍔</span>
+                    </div>
+                </div>
+
+                <div class="control-row">
+                    <div class="time-box"><span id="val-f-time">15</span> m</div>
+                    <div class="slider-container" style="opacity: 0.6; pointer-events: none;">
+                        <input type="range" id="slider-inverse" min="0" max="30" value="15">
+                    </div>
+                    <div class="output-box">
+                        <span id="val-f-prod">120</span> <span class="food-icon">🍟</span>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 20px; font-size: 1.2rem;">
+                    Projected Combos: <strong id="val-combos" style="color: var(--orange-dark); font-size: 1.4rem;">60</strong>
+                </div>
+
+                <button class="btn-main" onclick="submitProduction()">Bring Combos to Truck</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-r1-results" class="screen">
+        <div class="results-card">
+            <h2 style="color: var(--orange-truck);">End of Round 1 (No Trade)</h2>
+            <p>Here is how you performed compared to the optimal strategy.</p>
+            
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Your Result</th>
+                        <th>Optimal (No Trade)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>🍔 Burgers Prepared</td>
+                        <td id="r1-my-b">0</td>
+                        <td id="r1-opt-b">0</td>
+                    </tr>
+                    <tr>
+                        <td>🍟 Fries Prepared</td>
+                        <td id="r1-my-f">0</td>
+                        <td id="r1-opt-f">0</td>
+                    </tr>
+                    <tr>
+                        <td><strong>📦 Combos Sold</strong></td>
+                        <td class="highlight-score" id="r1-my-score">0</td>
+                        <td class="highlight-score" id="r1-opt-score">0</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p id="r1-feedback" style="font-style: italic; color: #666;"></p>
+            <button class="btn-main" onclick="startRound2Intro()">Next: Round 2 (Trade)</button>
+        </div>
+    </div>
+
+    <div id="screen-r2-intro" class="screen" style="text-align: center;">
+        <h1 style="color: var(--blue-truck);">Round 2: Trading Opportunity</h1>
+        <p style="font-size: 1.1rem; max-width: 600px; margin: 0 auto 30px;">
+            In this round, you are not alone.
+            <br><br>
+            You can <strong>TRADE</strong> with another food truck nearby.
+            <br>
+            They might be better at making things you are slow at.
+        </p>
+        <button class="btn-main" onclick="startRound2Production()">Start Production Phase</button>
+    </div>
+
+    <div id="screen-trade" class="screen">
+        <h2 style="text-align: center; color: var(--blue-truck);">Marketplace</h2>
+        
+        <div class="trade-dashboard">
+            <div class="inventory-box">
+                <div style="color: #666;">Your Inventory</div>
+                <div class="inventory-val">🍔 <span id="inv-b">0</span></div>
+                <div class="inventory-val">🍟 <span id="inv-f">0</span></div>
+                <div style="margin-top:5px; font-weight:bold; color:var(--orange-dark);">Combos: <span id="inv-c">0</span></div>
+            </div>
+            <div style="display:flex; align-items:center; color:#ccc; font-size:2rem;">
+                ⇄
+            </div>
+            <div class="inventory-box" style="opacity: 0.7;">
+                <div style="color: #666;">Partner's Inventory</div>
+                <div class="inventory-val">❓ Hidden</div>
+            </div>
         </div>
 
-        <div class="trade-row">
+        <div class="chat-interface" id="chat-box">
+            <div class="msg msg-system">Connecting to local network...</div>
+        </div>
+
+        <div class="trade-controls" id="trade-controls-area" style="opacity:0.5; pointer-events:none;">
             <span>I offer</span>
-            <input type="number" id="offer-give-amt" class="trade-input" min="1">
-            <select id="offer-give-type" class="trade-input" style="width:100px;">
-                <option value="burgers">Burgers</option>
-                <option value="fries">Fries</option>
+            <input type="number" id="offer-give-amt" style="width:50px" min="1">
+            <select id="offer-give-type">
+                <option value="burgers">🍔 Burgers</option>
+                <option value="fries">🍟 Fries</option>
             </select>
             <span>for</span>
-            <input type="number" id="offer-get-amt" class="trade-input" min="1">
-            <select id="offer-get-type" class="trade-input" style="width:100px;">
-                <option value="fries">Fries</option>
-                <option value="burgers">Burgers</option>
+            <input type="number" id="offer-get-amt" style="width:50px" min="1">
+            <select id="offer-get-type">
+                <option value="fries">🍟 Fries</option>
+                <option value="burgers">🍔 Burgers</option>
             </select>
+            <button class="btn-main" style="margin:0; padding: 10px 20px; font-size:1rem;" onclick="proposeTrade()">Propose</button>
         </div>
 
-        <button class="btn" onclick="proposeTrade()">Propose Trade</button>
-        <button class="btn btn-orange" onclick="finishGame()">Finish & Calculate Score</button>
+        <button class="btn-main" style="background-color: #666; margin-top: 20px;" onclick="finishGame()">Finish Trading</button>
     </div>
 
-    <div id="screen-results" class="hidden">
-        <h1>Final Results</h1>
-        <div class="dashboard">
-            <div class="stat-box">Original Combos<br><span id="res-orig">0</span></div>
-            <div class="stat-box">Final Combos<br><span id="res-final">0</span></div>
-            <div class="stat-box">Gain from Trade<br><span id="res-gain" style="color:green">+0</span></div>
+    <div id="screen-final" class="screen">
+        <div class="results-card">
+            <h1 style="color: var(--blue-truck);">Final Results</h1>
+            
+            <div style="display: flex; justify-content: space-around; text-align: center; margin-bottom: 30px;">
+                <div>
+                    <div style="color:#888;">Round 1 (No Trade)</div>
+                    <div style="font-size: 2rem; font-weight: bold;" id="final-r1">0</div>
+                </div>
+                <div>
+                    <div style="color:#888;">Round 2 (With Trade)</div>
+                    <div style="font-size: 3rem; color: var(--green-btn); font-weight: bold;" id="final-r2">0</div>
+                </div>
+            </div>
+
+            <p id="final-msg" style="text-align: center; font-size: 1.1rem;"></p>
+            <button class="btn-main" onclick="location.reload()">Restart Game</button>
         </div>
-        <p id="res-msg"></p>
-        <button class="btn" onclick="location.reload()">Play Again</button>
     </div>
 
 </div>
 
 <script>
-    // GAME STATE
-    let myProd = { b_rate: 4, f_rate: 8 }; // Student makes 4 Burgers or 8 Fries per min
-    let botProd = { b_rate: 6, f_rate: 2 }; // Bot makes 6 Burgers or 2 Fries per min (Comparative Adv in Burgers)
-    
-    let inventory = { b: 0, f: 0 };
-    let botInventory = { b: 0, f: 0 };
-    let initialCombos = 0;
+    // --- GAME DATA ---
+    const STATE = {
+        round: 1,
+        prod: { b: 0, f: 0 }, // Player productivity (randomized on init)
+        botProd: { b: 0, f: 0 }, // Bot productivity
+        inventory: { b: 0, f: 0 },
+        botInventory: { b: 0, f: 0 },
+        scores: { r1: 0, r2: 0 }
+    };
 
-    // 1. SETUP & RANDOMIZATION
+    // --- INIT ---
     function init() {
-        // Randomize rates slightly to keep it fresh
-        if(Math.random() > 0.5) {
-            myProd = { b_rate: 2, f_rate: 8 };  // Student good at Fries
-            botProd = { b_rate: 6, f_rate: 3 }; // Bot good at Burgers
+        // Randomize Player Production: Either (4B, 8F) or (8B, 4F) or (2B, 6F)...
+        // Let's stick to the MobLab example: 4 Burgers vs 8 Fries
+        // Or flip it: 8 Burgers vs 4 Fries
+        if (Math.random() > 0.5) {
+            STATE.prod = { b: 4, f: 8 };
+            STATE.botProd = { b: 8, f: 2 }; // Bot has comparative advantage in Burgers
         } else {
-            myProd = { b_rate: 6, f_rate: 2 };  // Student good at Burgers
-            botProd = { b_rate: 3, f_rate: 9 }; // Bot good at Fries
+            STATE.prod = { b: 8, f: 4 };
+            STATE.botProd = { b: 2, f: 8 }; // Bot has comparative advantage in Fries
         }
-        document.getElementById('prod-rate').innerText = `1 min = ${myProd.b_rate} Burgers OR ${myProd.f_rate} Fries`;
+
+        // Update UI
+        document.getElementById('rate-b').innerText = STATE.prod.b;
+        document.getElementById('rate-f').innerText = STATE.prod.f;
     }
 
-    function startGame() {
+    // --- NAVIGATION ---
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    // --- ROUND 1 LOGIC ---
+    function startRound1() {
+        STATE.round = 1;
+        document.getElementById('round-indicator').innerText = "Round 1 of 2 (No Trade)";
         showScreen('screen-production');
-        updateProduction();
+        updateCalculations();
     }
 
-    // 2. PRODUCTION LOGIC
-    function updateProduction() {
-        let t_b = parseInt(document.getElementById('time-slider').value);
-        let t_f = 30 - t_b;
-        
-        document.getElementById('time-b-val').innerText = t_b;
-        document.getElementById('time-f-val').innerText = t_f;
+    function updateCalculations() {
+        const t_b = parseInt(document.getElementById('slider').value);
+        const t_f = 30 - t_b;
 
-        let b_count = t_b * myProd.b_rate;
-        let f_count = t_f * myProd.f_rate;
-        let combos = Math.min(b_count, f_count);
+        // Sync visual slider
+        document.getElementById('slider-inverse').value = t_f;
 
-        document.getElementById('prod-b').innerText = b_count;
-        document.getElementById('prod-f').innerText = f_count;
-        document.getElementById('prod-c').innerText = combos;
+        // Update Text
+        document.getElementById('val-b-time').innerText = t_b;
+        document.getElementById('val-f-time').innerText = t_f;
+
+        // Calculate Production
+        const prod_b = t_b * STATE.prod.b;
+        const prod_f = t_f * STATE.prod.f;
+        const combos = Math.min(prod_b, prod_f);
+
+        document.getElementById('val-b-prod').innerText = prod_b;
+        document.getElementById('val-f-prod').innerText = prod_f;
+        document.getElementById('val-combos').innerText = combos;
     }
 
     function submitProduction() {
-        let t_b = parseInt(document.getElementById('time-slider').value);
-        inventory.b = t_b * myProd.b_rate;
-        inventory.f = (30 - t_b) * myProd.f_rate;
-        initialCombos = Math.min(inventory.b, inventory.f);
+        const t_b = parseInt(document.getElementById('slider').value);
+        const t_f = 30 - t_b;
+        const b = t_b * STATE.prod.b;
+        const f = t_f * STATE.prod.f;
+        const score = Math.min(b, f);
 
-        // Generate Bot Production (Optimized for their advantage, then mixed slightly)
-        // Bot will specialize in their comparative advantage
-        let botTb = (botProd.b_rate > botProd.f_rate) ? 25 : 5; 
-        botInventory.b = botTb * botProd.b_rate;
-        botInventory.f = (30 - botTb) * botProd.f_rate;
+        if (STATE.round === 1) {
+            // End Round 1
+            STATE.scores.r1 = score;
+            showRound1Results(b, f, score);
+        } else {
+            // Proceed to Trading (Round 2)
+            STATE.inventory = { b: b, f: f };
+            // Initialize Bot Inventory (Bot always plays optimally for production)
+            // Bot splits time to maximize its OWN standalone combos first
+            // Bot Max: t_b*rate_b = t_f*rate_f => t_b*rb = (30-t_b)*rf
+            // This gives a good baseline inventory for trading
+            const bot_tb_ideal = (30 * STATE.botProd.f) / (STATE.botProd.b + STATE.botProd.f);
+            // We make the bot slightly specialized to encourage trade
+            // If bot is better at Burgers, it makes MORE Burgers than optimal
+            let bot_tb_actual = bot_tb_ideal;
+            if (STATE.botProd.b > STATE.botProd.f) bot_tb_actual += 5; // Specialize
+            else bot_tb_actual -= 5;
 
-        showScreen('screen-connecting');
-        
-        // Fake Waiting Time
-        setTimeout(() => { document.getElementById('connect-msg').innerText = "Found a partner!"; }, 2000);
-        setTimeout(() => { 
-            showScreen('screen-trade'); 
-            updateInventoryUI();
-        }, 4000);
+            // Clamp 0-30
+            bot_tb_actual = Math.max(0, Math.min(30, bot_tb_actual));
+            
+            STATE.botInventory.b = Math.round(bot_tb_actual * STATE.botProd.b);
+            STATE.botInventory.f = Math.round((30 - bot_tb_actual) * STATE.botProd.f);
+
+            startTradingPhase();
+        }
     }
 
-    // 3. TRADING LOGIC
+    function showRound1Results(b, f, score) {
+        // Calculate Optimal No-Trade
+        // t_b * prod_b = (30 - t_b) * prod_f
+        // t_b * prod_b = 30*prod_f - t_b*prod_f
+        // t_b (prod_b + prod_f) = 30 * prod_f
+        const opt_tb = (30 * STATE.prod.f) / (STATE.prod.b + STATE.prod.f);
+        const opt_b = Math.round(opt_tb * STATE.prod.b);
+        const opt_f = Math.round((30 - opt_tb) * STATE.prod.f);
+        const opt_score = Math.min(opt_b, opt_f);
+
+        document.getElementById('r1-my-b').innerText = b;
+        document.getElementById('r1-my-f').innerText = f;
+        document.getElementById('r1-my-score').innerText = score;
+
+        document.getElementById('r1-opt-b').innerText = opt_b;
+        document.getElementById('r1-opt-f').innerText = opt_f;
+        document.getElementById('r1-opt-score').innerText = opt_score;
+
+        const feedback = document.getElementById('r1-feedback');
+        if (score >= opt_score - 1) {
+            feedback.innerText = "Excellent! You found the optimal balance.";
+            feedback.style.color = "green";
+        } else {
+            feedback.innerText = "Tip: To maximize combos without trade, try to make equal amounts of Burgers and Fries.";
+            feedback.style.color = "#D48806";
+        }
+
+        showScreen('screen-r1-results');
+    }
+
+    // --- ROUND 2 LOGIC ---
+    function startRound2Intro() {
+        STATE.round = 2;
+        document.getElementById('round-indicator').innerText = "Round 2 of 2 (Trade)";
+        showScreen('screen-r2-intro');
+    }
+
+    function startRound2Production() {
+        showScreen('screen-production');
+        // Reset slider to middle
+        document.getElementById('slider').value = 15;
+        updateCalculations();
+    }
+
+    function startTradingPhase() {
+        showScreen('screen-trade');
+        updateInventoryUI();
+        
+        // Simulate Connection
+        const chat = document.getElementById('chat-box');
+        setTimeout(() => {
+            chat.innerHTML += `<div class="msg msg-system">Found partner: Truck_User_${Math.floor(Math.random()*1000)}</div>`;
+        }, 1500);
+        setTimeout(() => {
+            chat.innerHTML += `<div class="msg msg-partner">Hello! I'm open for trade.</div>`;
+            document.getElementById('trade-controls-area').style.opacity = "1";
+            document.getElementById('trade-controls-area').style.pointerEvents = "all";
+        }, 3000);
+    }
+
     function updateInventoryUI() {
-        document.getElementById('inv-b').innerText = inventory.b;
-        document.getElementById('inv-f').innerText = inventory.f;
+        document.getElementById('inv-b').innerText = STATE.inventory.b;
+        document.getElementById('inv-f').innerText = STATE.inventory.f;
+        document.getElementById('inv-c').innerText = Math.min(STATE.inventory.b, STATE.inventory.f);
     }
 
     function proposeTrade() {
-        let giveAmt = parseInt(document.getElementById('offer-give-amt').value);
-        let giveType = document.getElementById('offer-give-type').value;
-        let getAmt = parseInt(document.getElementById('offer-get-amt').value);
-        let getType = document.getElementById('offer-get-type').value;
+        const giveAmt = parseInt(document.getElementById('offer-give-amt').value);
+        const giveType = document.getElementById('offer-give-type').value;
+        const getAmt = parseInt(document.getElementById('offer-get-amt').value);
+        const getType = document.getElementById('offer-get-type').value;
+        const chat = document.getElementById('chat-box');
 
         if (!giveAmt || !getAmt) return;
 
-        // Log the user offer
-        let log = document.getElementById('trade-log');
-        log.innerHTML += `<div class="msg-user">You: Offer ${giveAmt} ${giveType} for ${getAmt} ${getType}</div>`;
-
-        // Validation: Do you have the goods?
-        let currentStock = (giveType === 'burgers') ? inventory.b : inventory.f;
+        // 1. Validate Player Inventory
+        const currentStock = (giveType === 'burgers') ? STATE.inventory.b : STATE.inventory.f;
         if (currentStock < giveAmt) {
-            log.innerHTML += `<div class="msg-bot">System: You don't have enough ${giveType}!</div>`;
+            chat.innerHTML += `<div class="msg msg-system">Error: You don't have enough ${giveType}.</div>`;
             return;
         }
 
-        // ROBOT DECISION LOGIC
-        // 1. Calculate Implied Price (Exchange Ratio)
-        // 2. Check if Bot has the goods
-        // 3. Check if Bot is better off (Post-trade combos > Pre-trade combos)
+        // 2. Add to Chat
+        const giveIcon = (giveType === 'burgers') ? '🍔' : '🍟';
+        const getIcon = (getType === 'burgers') ? '🍔' : '🍟';
+        chat.innerHTML += `<div class="msg msg-me">Offer: ${giveAmt} ${giveIcon} for ${getAmt} ${getIcon}</div>`;
+        chat.scrollTop = chat.scrollHeight;
 
-        let botHasGoods = (getType === 'burgers') ? botInventory.b >= getAmt : botInventory.f >= getAmt;
-        
-        if (!botHasGoods) {
-            setTimeout(() => {
-                log.innerHTML += `<div class="msg-bot">Partner: "I don't have enough items to make that trade."</div>`;
-                log.scrollTop = log.scrollHeight;
-            }, 1000);
-            return;
-        }
-
-        // Calculate Bot's projected inventory
-        let botNewB = botInventory.b;
-        let botNewF = botInventory.f;
-
-        if (getType === 'burgers') { // User wants Burgers (Bot gives Burgers)
-            botNewB -= getAmt;
-            botNewF += giveAmt;
-        } else { // User wants Fries (Bot gives Fries)
-            botNewF -= getAmt;
-            botNewB += giveAmt;
-        }
-
-        let botCurrentCombos = Math.min(botInventory.b, botInventory.f);
-        let botNewCombos = Math.min(botNewB, botNewF);
-
-        // DECISION
+        // 3. Robot Decision Logic
         setTimeout(() => {
-            if (botNewCombos > botCurrentCombos) {
-                // ACCEPT
-                log.innerHTML += `<div class="msg-bot">Partner: "Deal! Accepted."</div>`;
-                
-                // Update User
-                if (giveType === 'burgers') { inventory.b -= giveAmt; inventory.f += getAmt; }
-                else { inventory.f -= giveAmt; inventory.b += getAmt; }
-
-                // Update Bot
-                botInventory.b = botNewB;
-                botInventory.f = botNewF;
-
-                updateInventoryUI();
-            } else {
-                // REJECT
-                log.innerHTML += `<div class="msg-bot">Partner: "No thanks. That doesn't help me."</div>`;
-            }
-            log.scrollTop = log.scrollHeight;
+            evaluateOffer(giveAmt, giveType, getAmt, getType);
         }, 1500);
     }
 
-    function finishGame() {
-        showScreen('screen-results');
-        let finalCombos = Math.min(inventory.b, inventory.f);
-        document.getElementById('res-orig').innerText = initialCombos;
-        document.getElementById('res-final').innerText = finalCombos;
+    function evaluateOffer(giveAmt, giveType, getAmt, getType) {
+        const chat = document.getElementById('chat-box');
         
-        let diff = finalCombos - initialCombos;
-        let el = document.getElementById('res-gain');
-        el.innerText = (diff >= 0 ? "+" : "") + diff;
-        el.style.color = diff >= 0 ? "green" : "red";
+        // Robot Logic:
+        // A. Does robot have enough?
+        const botStock = (getType === 'burgers') ? STATE.botInventory.b : STATE.botInventory.f;
+        if (botStock < getAmt) {
+            chat.innerHTML += `<div class="msg msg-partner">I don't have enough items for that.</div>`;
+            chat.scrollTop = chat.scrollHeight;
+            return;
+        }
 
-        let msg = (diff > 0) ? "Great job! You beat your original production through trade." : "You didn't improve your outcome. Remember to trade what is 'cheap' for you to make!";
-        document.getElementById('res-msg').innerText = msg;
+        // B. Is robot better off?
+        // Calculate current combos
+        const currBotCombos = Math.min(STATE.botInventory.b, STATE.botInventory.f);
+
+        // Calculate post-trade inventory
+        let newBotB = STATE.botInventory.b;
+        let newBotF = STATE.botInventory.f;
+
+        if (getType === 'burgers') { // Bot gives Burgers
+            newBotB -= getAmt;
+            newBotF += giveAmt; // Bot gets Fries
+        } else { // Bot gives Fries
+            newBotF -= getAmt;
+            newBotB += giveAmt; // Bot gets Burgers
+        }
+
+        const newBotCombos = Math.min(newBotB, newBotF);
+
+        // DECISION THRESHOLD: Strictly better off OR equal but balances inventory better
+        if (newBotCombos > currBotCombos) {
+            // ACCEPT
+            chat.innerHTML += `<div class="msg msg-partner">Deal! I accept.</div>`;
+            
+            // Execute Trade
+            if (giveType === 'burgers') {
+                STATE.inventory.b -= giveAmt;
+                STATE.inventory.f += getAmt;
+                STATE.botInventory.b += giveAmt;
+                STATE.botInventory.f -= getAmt;
+            } else {
+                STATE.inventory.f -= giveAmt;
+                STATE.inventory.b += getAmt;
+                STATE.botInventory.f += giveAmt;
+                STATE.botInventory.b -= getAmt;
+            }
+            updateInventoryUI();
+        } else {
+            // REJECT
+            chat.innerHTML += `<div class="msg msg-partner">No thanks. That doesn't help me maximize combos.</div>`;
+        }
+        chat.scrollTop = chat.scrollHeight;
     }
 
-    function showScreen(id) {
-        document.querySelectorAll('.container > div').forEach(d => d.classList.add('hidden'));
-        document.getElementById(id).classList.remove('hidden');
+    function finishGame() {
+        const finalScore = Math.min(STATE.inventory.b, STATE.inventory.f);
+        document.getElementById('final-r1').innerText = STATE.scores.r1;
+        document.getElementById('final-r2').innerText = finalScore;
+
+        const msg = document.getElementById('final-msg');
+        if (finalScore > STATE.scores.r1) {
+            msg.innerText = "Success! Specialization and Trade allowed you to consume MORE than you could produce alone.";
+            msg.style.color = "green";
+        } else {
+            msg.innerText = "You ended up with the same (or fewer) combos. Next time, try specializing completely in your strong item and trading for the other!";
+        }
+
+        showScreen('screen-final');
     }
 
-    // Initialize on load
+    // Start
     init();
+
 </script>
 
 </body>
 </html>
+
+```
