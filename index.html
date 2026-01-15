@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Food Truck: Smart Trade Edition</title>
+    <title>Food Truck: Econ Edition</title>
     <style>
         :root {
             --bg-color: #FDF1D6;       
@@ -215,16 +215,16 @@
 
 <div id="screen-intro" class="container">
     <div style="background:white; padding:40px; border-radius:20px; text-align:left; max-width:600px; margin:0 auto;">
-        <h1 style="text-align: center; color: var(--teal-btn);">Food Truck Challenge</h1>
+        <h1 style="text-align: center; color: var(--teal-btn);">Market Simulation</h1>
         <p><strong>Goal:</strong> Sell the most Combos (1 Burger + 1 Fry).</p>
-        <p><strong>Instructions:</strong></p>
+        <p><strong>The Market:</strong></p>
         <ul>
-            <li>You have <strong>30 minutes</strong> to prep.</li>
-            <li>You will be paired with a robot partner.</li>
-            <li><strong>Trade Logic:</strong> The robot is smart. It will only accept trades that help it. You should only accept trades that help you!</li>
+            <li>Half the class is good at Burgers. Half is good at Fries.</li>
+            <li><strong>Opportunity Cost:</strong> If you make Burgers efficiently, your "cost" for Fries is high. You should trade!</li>
+            <li><strong>Bad Deals:</strong> Some students will offer you bad trades. Check the math before accepting.</li>
         </ul>
         <div style="text-align: center; margin-top: 30px;">
-            <button class="action-btn" onclick="startGame()">Find Partner & Start</button>
+            <button class="action-btn" onclick="startGame()">Join Market</button>
         </div>
     </div>
 </div>
@@ -248,7 +248,7 @@
                 <div style="font-weight:bold; font-size:20px;"><span id="time-f">15</span> min</div>
                 <button class="control-btn" onclick="adjustTime('fries', 1)">+</button>
             </div>
-            <p style="color:#666;">Partner: <strong id="partner-name">Searching...</strong></p>
+            <p style="color:#666;">Status: <strong id="partner-name" style="color:green">Connected to Class Market</strong></p>
         </div>
 
         <div class="output-box">
@@ -269,7 +269,7 @@
                 </span>
             </div>
 
-            <button class="action-btn btn-dark" onclick="openProposeModal()">Propose Trade</button>
+            <button class="action-btn btn-dark" onclick="openProposeModal()">Broadcast Offer</button>
             <button class="action-btn" onclick="submitRound()">Bring <span id="combo-count">60</span> Combos</button>
         </div>
     </div>
@@ -278,7 +278,7 @@
 <div id="modal-propose" class="modal-overlay hidden">
     <div class="trade-card">
         <div class="trade-header">
-            <span>🚚 You Propose</span>
+            <span>📢 Broadcast Offer to Class</span>
         </div>
         <div class="trade-body">
             <div class="trade-item">
@@ -317,7 +317,7 @@
         </div>
 
         <div class="trade-actions">
-            <button class="modal-btn btn-accept" onclick="sendProposal()">Send Proposal</button>
+            <button class="modal-btn btn-accept" onclick="sendProposal()">Broadcast</button>
             <button class="modal-btn btn-decline" onclick="closeModal('modal-propose')">Cancel</button>
         </div>
     </div>
@@ -326,7 +326,7 @@
 <div id="modal-incoming" class="modal-overlay hidden">
     <div class="trade-card" style="border: 4px solid var(--orange-alert);">
         <div class="trade-header" style="background:var(--orange-alert); color:white;">
-            <span>🔔 New Offer from Partner!</span>
+            <span id="inc-title">🔔 Offer from Truck_101</span>
         </div>
         <div class="trade-body">
             <div class="trade-item">
@@ -377,15 +377,12 @@
     let rateB = 4, rateF = 8;
     let productionB = 0, productionF = 0;
     let netTradeB = 0, netTradeF = 0;
+    
+    // Opportunity Costs (OC)
+    let myOC_Burgers = 0; // Cost of 1 burger in fries
 
-    // --- ROBOT BRAIN ---
+    // --- MARKET VARIABLES ---
     let botInterval;
-    // The Bot tracks its own inventory to make rational decisions
-    let botState = {
-        rateB: 8, rateF: 2, // Default opposite of player
-        timeB: 0, timeF: 30, // Bot specializes
-        tradeB: 0, tradeF: 0
-    };
     let activeBotOffer = null;
 
     // --- GAME ENGINE ---
@@ -394,31 +391,25 @@
         document.getElementById('screen-game').classList.remove('hidden');
         
         // 1. Randomize Player (You)
-        rateB = (Math.floor(Math.random() * 3) + 1) * 2; // 2, 4, 6
-        rateF = (Math.floor(Math.random() * 3) + 3) * 2; // 6, 8, 10
-        
-        // 2. Configure Bot (Opposite of You)
-        // If you are good at Fries, Bot is good at Burgers
-        botState.rateB = rateF; 
-        botState.rateF = rateB;
-        
-        // Bot Strategy: Specialize!
-        // If Bot is better at B, spend 30 min on B.
-        if (botState.rateB > botState.rateF) {
-            botState.timeB = 30; botState.timeF = 0;
+        // 50% chance to be "Burger Pro" (RateB > RateF)
+        // 50% chance to be "Fry Pro" (RateF > RateB)
+        if (Math.random() > 0.5) {
+            rateB = 8; rateF = 4; // Burger Pro
         } else {
-            botState.timeB = 0; botState.timeF = 30;
+            rateB = 4; rateF = 8; // Fry Pro
         }
 
-        // Update UI
+        // Calculate my Opportunity Cost
+        // If I make 4 B and 8 F: 1 B costs 2 F.
+        myOC_Burgers = rateF / rateB;
+
         document.getElementById('rate-b').innerText = rateB;
         document.getElementById('rate-f').innerText = rateF;
-        document.getElementById('partner-name').innerText = "Truck_" + Math.floor(Math.random()*1000);
 
         updateEngine();
         
-        // Start Bot Offers (Random timing)
-        botInterval = setInterval(triggerBotProposal, 8000 + Math.random() * 10000);
+        // Start Random Bot Offers (The "Market")
+        botInterval = setInterval(triggerBotProposal, 6000 + Math.random() * 8000); // 6-14s delay
         
         startTimer();
     }
@@ -438,7 +429,6 @@
         productionB = timeB * rateB;
         productionF = timeF * rateF;
         
-        // Current Inventory = Production + Net Trades
         let finalB = Math.max(0, productionB + netTradeB);
         let finalF = Math.max(0, productionF + netTradeF);
 
@@ -447,7 +437,6 @@
         document.getElementById('inv-b').innerText = finalB;
         document.getElementById('inv-f').innerText = finalF;
 
-        // Visual diffs
         updateDiff('diff-b', netTradeB);
         updateDiff('diff-f', netTradeF);
 
@@ -464,7 +453,7 @@
         }
     }
 
-    // --- SENDING PROPOSALS (USER -> BOT) ---
+    // --- SENDING PROPOSALS (BROADCAST) ---
     function openProposeModal() {
         document.getElementById('modal-propose').classList.remove('hidden');
         calculateGain();
@@ -475,11 +464,10 @@
         let val = parseInt(el.value) + delta;
         if(val < 1) val = 1;
         el.value = val;
-        calculateGain(); // Real-time update
+        calculateGain();
     }
 
     function calculateGain() {
-        // Calculate gain for PLAYER
         let giveType = document.getElementById('offer-give-type').value;
         let getType = document.getElementById('offer-get-type').value;
         let giveAmt = parseInt(document.getElementById('offer-give-val').value);
@@ -498,86 +486,100 @@
         let giveAmt = parseInt(document.getElementById('offer-give-val').value);
         let getAmt = parseInt(document.getElementById('offer-get-val').value);
         
-        // 1. Validation
         let userHas = (giveType === 'burgers') ? (productionB + netTradeB) : (productionF + netTradeF);
         if(userHas < giveAmt) {
-            alert("You don't have enough inventory to offer this!");
+            alert("Insufficient inventory!");
             return;
         }
 
-        // 2. ROBOT DECISION (The Brain)
-        // The robot calculates: Will this trade increase MY (the robot's) combo count?
-        let botProdB = botState.timeB * botState.rateB;
-        let botProdF = botState.timeF * botState.rateF;
+        // MARKET LOGIC (Did anyone accept?)
+        // Calculate Implied Price (Terms of Trade)
+        // If trading Burgers for Fries: Price = Fries / Burgers
+        let price = (giveType === 'burgers') ? (getAmt / giveAmt) : (giveAmt / getAmt);
         
-        // Important: User GIVES 'burgers' means Bot RECEIVES 'burgers'
-        // User GETS 'fries' means Bot GIVES 'fries'
-        let botGain = getScoreDiff(botProdB, botProdF, botState.tradeB, botState.tradeF, getType, getAmt, giveType, giveAmt);
+        // Simulating the "Other Half" of the class
+        // Opponent OC (approximate). If I am 2, they are 0.5. 
+        // A trade works if price is BETWEEN OCs.
+        let marketAccept = false;
+
+        // If I am getting a "Great Deal" (e.g., getting 10 Fries for 1 Burger), the market rejects.
+        // If I am offering a "Fair Deal" (e.g., 1 Burger for 1.5 Fries), market accepts.
+        
+        // Simplified Logic: 
+        // If user gain is MASSIVE (> 5 combos), likely bad for opponent -> Reject.
+        // If user gain is MODERATE (1-3 combos), good for opponent -> Accept.
+        
+        // Let's create a temporary Random Bot to check this against
+        let randomBotRateB = (Math.random() > 0.5) ? 8 : 4;
+        let randomBotRateF = (randomBotRateB === 8) ? 4 : 8;
+        
+        // Does this trade help the Random Bot?
+        // Assume Random Bot specialized
+        let botB = (randomBotRateB > randomBotRateF) ? 30 * 8 : 0;
+        let botF = (randomBotRateB > randomBotRateF) ? 0 : 30 * 8;
+        
+        // Calculate Bot Gain
+        // Note: User Gives = Bot Gets
+        let botDiff = getScoreDiff(botB, botF, 0, 0, getType, getAmt, giveType, giveAmt);
 
         closeModal('modal-propose');
 
         setTimeout(() => {
-            if(botGain >= 0) { // Bot accepts if it gains or breaks even
-                alert("Partner ACCEPTED! (It helped them too)");
-                // Apply trade to User
+            if(botDiff > 0) {
+                alert("Truck_" + Math.floor(Math.random()*900+100) + " ACCEPTED your offer!");
                 if(giveType === 'burgers') { netTradeB -= giveAmt; netTradeF += getAmt; }
                 else { netTradeF -= giveAmt; netTradeB += getAmt; }
-                
-                // Apply trade to Bot State (to keep it smart)
-                if(getType === 'burgers') { botState.tradeB -= getAmt; botState.tradeF += giveAmt; }
-                else { botState.tradeF -= getAmt; botState.tradeB += giveAmt; }
-                
                 updateEngine();
             } else {
-                alert("Partner DECLINED. (This trade hurts their score)");
+                alert("No one accepted. (Your price was likely too high for the market).");
             }
         }, 600);
     }
 
-    // --- RECEIVING PROPOSALS (BOT -> USER) ---
+    // --- RECEIVING PROPOSALS (MARKET -> USER) ---
     function triggerBotProposal() {
         if(!document.getElementById('modal-result').classList.contains('hidden')) return;
 
-        // Bot creates an offer based on what it has too much of.
-        let botProdB = botState.timeB * botState.rateB;
-        let botProdF = botState.timeF * botState.rateF;
-        let currBotB = botProdB + botState.tradeB;
-        let currBotF = botProdF + botState.tradeF;
+        // Create a random Bot from the class
+        let botID = Math.floor(Math.random() * 900 + 100);
+        let bRateB = (Math.random() > 0.5) ? 8 : 4;
+        let bRateF = (bRateB === 8) ? 4 : 8;
 
-        // Determine Surplus
-        let botGiveType = (currBotB > currBotF) ? 'Burgers' : 'Fries';
-        let botWantType = (botGiveType === 'Burgers') ? 'Fries' : 'Burgers';
+        // Bot gives what they are good at
+        let giveType = (bRateB > bRateF) ? 'Burgers' : 'Fries';
+        let wantType = (giveType === 'Burgers') ? 'Fries' : 'Burgers';
 
-        // Create Variance (Good Deals vs Bad Deals)
-        // A "Good Deal" for user: Bot gives lots, asks little.
-        // A "Bad Deal" for user: Bot gives little, asks lots.
-        let quality = Math.random(); 
-        let offerGive, offerAsk;
+        // Bot Logic: Offer a price.
+        // If Bot makes Burgers (Low Cost), they will sell cheap or dear.
+        // Price Range: 0.5 to 2.0.
+        // "Bad Deal" for Player: Price = 0.6 (Bot gives 0.6 F per B).
+        // "Good Deal" for Player: Price = 1.5 (Bot gives 1.5 F per B).
+        
+        let isGoodDeal = Math.random() > 0.4; // 60% chance of fair/good deal
+        
+        let amtGive, amtAsk;
 
-        if (quality > 0.6) {
-            // Bad Deal (Stingy Bot)
-            offerGive = 4; 
-            offerAsk = 5; 
-        } else if (quality > 0.3) {
-            // Fair Deal
-            offerGive = 5; 
-            offerAsk = 4;
+        if (giveType === 'Burgers') {
+            // Bot Gives Burgers, Wants Fries.
+            amtGive = 5; 
+            // Fair price might be 1:1.5. Bad price 1:3. Good price 1:1.
+            amtAsk = isGoodDeal ? 4 : 8; 
         } else {
-            // Good Deal (Desperate Bot)
-            offerGive = 6;
-            offerAsk = 3; 
+            // Bot Gives Fries, Wants Burgers
+            amtGive = 8;
+            amtAsk = isGoodDeal ? 4 : 2; 
         }
 
-        activeBotOffer = { giveType: botGiveType, giveAmt: offerGive, askType: botWantType, askAmt: offerAsk };
+        activeBotOffer = { giveType: giveType, giveAmt: amtGive, askType: wantType, askAmt: amtAsk };
 
-        // UI Setup
-        document.getElementById('inc-give-icon').innerText = (botGiveType === 'Burgers') ? '🍔' : '🍟';
-        document.getElementById('inc-give-name').innerText = botGiveType;
-        document.getElementById('inc-give-amt').innerText = offerGive;
+        document.getElementById('inc-title').innerText = "🔔 Offer from Truck_" + botID;
+        document.getElementById('inc-give-icon').innerText = (giveType === 'Burgers') ? '🍔' : '🍟';
+        document.getElementById('inc-give-name').innerText = giveType;
+        document.getElementById('inc-give-amt').innerText = amtGive;
 
-        document.getElementById('inc-get-icon').innerText = (botWantType === 'Burgers') ? '🍔' : '🍟';
-        document.getElementById('inc-get-name').innerText = botWantType;
-        document.getElementById('inc-get-amt').innerText = offerAsk;
+        document.getElementById('inc-get-icon').innerText = (wantType === 'Burgers') ? '🍔' : '🍟';
+        document.getElementById('inc-get-name').innerText = wantType;
+        document.getElementById('inc-get-amt').innerText = amtAsk;
 
         calculateIncomingGain(); 
         document.getElementById('modal-incoming').classList.remove('hidden');
@@ -585,7 +587,6 @@
 
     function calculateIncomingGain() {
         if(!activeBotOffer) return;
-        // User receives GiveType, User pays AskType
         let diff = getScoreDiff(productionB, productionF, netTradeB, netTradeF, activeBotOffer.askType, activeBotOffer.askAmt, activeBotOffer.giveType, activeBotOffer.giveAmt);
         
         let el = document.getElementById('inc-gain-val');
@@ -599,17 +600,12 @@
         let userHas = (payType === 'Burgers') ? (productionB + netTradeB) : (productionF + netTradeF);
         
         if(userHas < payAmt) {
-            alert("Insufficient inventory to accept!");
+            alert("Insufficient inventory!");
             return;
         }
 
-        // Apply Trade
         if(payType === 'Burgers') { netTradeB -= payAmt; netTradeF += activeBotOffer.giveAmt; }
         else { netTradeF -= payAmt; netTradeB += activeBotOffer.giveAmt; }
-        
-        // Update Bot State
-        if(activeBotOffer.giveType === 'Burgers') { botState.tradeB -= activeBotOffer.giveAmt; botState.tradeF += payAmt; }
-        else { botState.tradeF -= activeBotOffer.giveAmt; botState.tradeB += payAmt; }
 
         updateEngine();
         closeModal('modal-incoming');
@@ -617,7 +613,7 @@
 
     function declineIncoming() { closeModal('modal-incoming'); }
 
-    // --- HELPER: CALCULATE SCORE DIFFERENCE ---
+    // --- MATH HELPER ---
     function getScoreDiff(prodB, prodF, tradeB, tradeF, giveType, giveAmt, getType, getAmt) {
         let currB = prodB + tradeB;
         let currF = prodF + tradeF;
@@ -629,7 +625,7 @@
         if (giveType.toLowerCase() === 'burgers') newB -= giveAmt; else newF -= giveAmt;
         if (getType.toLowerCase() === 'burgers') newB += getAmt; else newF += getAmt;
 
-        let newScore = Math.min(newB, newF);
+        let newScore = Math.min(Math.max(0, newB), Math.max(0, newF));
         return newScore - currScore;
     }
 
@@ -638,7 +634,7 @@
     function submitRound() {
         clearInterval(botInterval);
         document.getElementById('res-score').innerText = document.getElementById('combo-count').innerText;
-        document.getElementById('res-msg').innerText = "Great job! Did you beat the 50/50 split?";
+        document.getElementById('res-msg').innerText = "Simulation Complete.";
         document.getElementById('modal-result').classList.remove('hidden');
     }
 
