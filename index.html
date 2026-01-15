@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Food Truck: Trade Simulation</title>
+    <title>Food Truck: Real-Time Trading</title>
     <style>
         :root {
             --bg-color: #FDF1D6;       
@@ -11,9 +11,8 @@
             --teal-btn: #00BFA5;       
             --teal-hover: #008F7A;
             --blue-border: #2D74DA;    
-            --orange: #F5A623;
-            --text-dark: #333333;
             --overlay-bg: rgba(0,0,0,0.6);
+            --text-dark: #333333;
         }
 
         body {
@@ -36,17 +35,6 @@
 
         .hidden { display: none !important; }
         
-        /* --- INTRO SCREEN --- */
-        .intro-card {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            max-width: 600px;
-            margin: 0 auto;
-            text-align: left;
-        }
-
         /* --- GAME HEADER --- */
         .prod-bar {
             display: inline-flex;
@@ -100,7 +88,6 @@
             font-size: 24px;
             cursor: pointer;
         }
-        .control-btn:hover { background: var(--teal-hover); }
 
         /* RIGHT: OUTPUT & TRADING */
         .output-box {
@@ -108,7 +95,6 @@
             border: 2px solid var(--blue-border);
             border-radius: 12px;
             padding: 20px;
-            position: relative;
         }
 
         .inventory-row {
@@ -121,21 +107,13 @@
             padding: 10px;
             border-bottom: 1px solid #eee;
         }
-        .inventory-row:last-child { border-bottom: none; }
 
-        .trade-diff { font-size: 14px; color: #666; font-weight: normal; }
-        .diff-pos { color: green; }
-        .diff-neg { color: red; }
-
-        /* BUTTONS */
-        .btn-row {
-            display: flex;
-            gap: 15px;
-            margin-top: 25px;
-        }
+        .trade-diff { font-size: 14px; color: #666; font-weight: normal; margin-left: 5px;}
+        .diff-pos { color: green; font-weight: bold;}
+        .diff-neg { color: red; font-weight: bold;}
 
         .action-btn {
-            flex: 1;
+            width: 100%;
             background-color: var(--teal-btn);
             color: white;
             border: none;
@@ -145,12 +123,12 @@
             border-radius: 8px;
             cursor: pointer;
             box-shadow: 0 4px 0 #008f7a;
+            margin-top: 10px;
         }
         .action-btn:hover { transform: translateY(2px); box-shadow: 0 2px 0 #008f7a; }
         .btn-dark { background-color: #006064; box-shadow: 0 4px 0 #00363a; }
-        .btn-dark:hover { box-shadow: 0 2px 0 #00363a; }
 
-        /* --- TRADE MODAL (MobLab Style) --- */
+        /* --- TRADE MODALS --- */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -160,6 +138,9 @@
             align-items: center;
             z-index: 1000;
         }
+        
+        /* Ensure incoming offer sits ON TOP of your proposal if both happen */
+        #modal-incoming { z-index: 1100; }
 
         .trade-card {
             background: white;
@@ -182,24 +163,17 @@
             font-size: 20px;
             font-weight: bold;
             border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
 
         .trade-body {
-            padding: 30px;
+            padding: 20px;
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 20px;
         }
 
-        .trade-item {
-            text-align: center;
-            width: 140px;
-        }
-        
+        .trade-item { text-align: center; width: 140px; }
         .food-icon-lg { font-size: 50px; display: block; margin-bottom: 10px; }
 
         .spinner-box {
@@ -210,39 +184,23 @@
             border-radius: 8px;
             overflow: hidden;
         }
-        .spin-btn {
-            background: var(--teal-btn);
-            color: white;
-            border: none;
-            width: 100%;
-            padding: 5px;
-            cursor: pointer;
-        }
-        .spin-val {
-            padding: 10px;
-            font-size: 20px;
-            font-weight: bold;
-            width: 100%;
-            border: none;
-            text-align: center;
-        }
+        .spin-btn { background: var(--teal-btn); color: white; border: none; width: 100%; cursor: pointer; }
+        .spin-val { padding: 10px; font-size: 20px; font-weight: bold; width: 100%; border: none; text-align: center; }
 
-        .trade-actions {
-            display: flex;
-        }
-        .modal-btn {
-            flex: 1;
-            padding: 20px;
-            border: none;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            color: white;
-        }
+        .trade-actions { display: flex; }
+        .modal-btn { flex: 1; padding: 20px; border: none; font-size: 18px; font-weight: bold; cursor: pointer; color: white; }
         .btn-accept { background: var(--teal-btn); }
-        .btn-accept:hover { background: var(--teal-hover); }
         .btn-decline { background: #999; }
-        .btn-decline:hover { background: #777; }
+
+        .gain-loss-display {
+            text-align: center;
+            padding: 10px;
+            background: #f9f9f9;
+            border-top: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+            font-size: 16px;
+            color: #555;
+        }
 
         /* STATUS BAR */
         .status-bar {
@@ -257,22 +215,22 @@
             box-sizing: border-box;
             font-size: 18px;
         }
-
     </style>
 </head>
 <body>
 
 <div id="screen-intro" class="container">
-    <div class="intro-card">
+    <div style="background:white; padding:40px; border-radius:20px; text-align:left; max-width:600px; margin:0 auto;">
         <h1 style="text-align: center;">Food Truck: Trade Edition</h1>
-        <p>In this version, you are not alone! You have a neighbor.</p>
-        <ul>
-            <li><strong>Production:</strong> Allocate your 30 minutes.</li>
-            <li><strong>Trade:</strong> You can exchange Burgers for Fries with your neighbor.</li>
-            <li><strong>Proposals:</strong> Your neighbor might send you offers, or you can send them offers.</li>
-        </ul>
+        <p><strong>Goal:</strong> Maximize Combos (1 Burger + 1 Fry).</p>
+        <p><strong>How to win:</strong></p>
+        <ol>
+            <li>Adjust your production sliders.</li>
+            <li>Look for trade opportunities.</li>
+            <li><strong>Watch the "Combos Gained" number!</strong> Only accept trades that give you a positive (+) gain.</li>
+        </ol>
         <div style="text-align: center; margin-top: 30px;">
-            <button class="action-btn" onclick="startGame()">Find a Partner & Start</button>
+            <button class="action-btn" onclick="startGame()">Start Simulation</button>
         </div>
     </div>
 </div>
@@ -285,27 +243,22 @@
 
     <div class="game-layout">
         <div class="prep-box">
-            <h3 style="color:var(--blue-border); margin-top:0;">Prep Time</h3>
-            
+            <h3 style="margin-top:0; color:#2D74DA;">Prep Time</h3>
             <div class="input-group">
                 <button class="control-btn" onclick="adjustTime('burgers', -1)">-</button>
                 <div style="font-weight:bold; font-size:20px;"><span id="time-b">15</span> min</div>
                 <button class="control-btn" onclick="adjustTime('burgers', 1)">+</button>
             </div>
-            
             <div class="input-group">
                 <button class="control-btn" onclick="adjustTime('fries', -1)">-</button>
                 <div style="font-weight:bold; font-size:20px;"><span id="time-f">15</span> min</div>
                 <button class="control-btn" onclick="adjustTime('fries', 1)">+</button>
             </div>
-            
-            <div style="text-align:center; color:#666;">
-                <small>Partner: <span id="partner-name">Searching...</span></small>
-            </div>
+            <p style="color:#666;">Connected to: <strong id="partner-name">Searching...</strong></p>
         </div>
 
         <div class="output-box">
-            <h3 style="color:var(--blue-border); margin-top:0;">Inventory (Production + Trade)</h3>
+            <h3 style="margin-top:0; color:#2D74DA;">Current Inventory</h3>
             
             <div class="inventory-row">
                 <span>🍔 Burgers</span>
@@ -322,10 +275,8 @@
                 </span>
             </div>
 
-            <div class="btn-row">
-                <button class="action-btn btn-dark" onclick="openProposeModal()">Propose Trade</button>
-                <button class="action-btn" onclick="submitRound()">Bring <span id="combo-count">60</span> Combos</button>
-            </div>
+            <button class="action-btn btn-dark" onclick="openProposeModal()">Propose Trade</button>
+            <button class="action-btn" onclick="submitRound()">Bring <span id="combo-count">60</span> Combos</button>
         </div>
     </div>
 </div>
@@ -333,20 +284,18 @@
 <div id="modal-propose" class="modal-overlay hidden">
     <div class="trade-card">
         <div class="trade-header">
-            <span>🚚 You</span>
-            <span>Propose a Trade</span>
-            <span>Neighbor 🚚</span>
+            <span>🚚 You Propose</span>
         </div>
         <div class="trade-body">
             <div class="trade-item">
-                <div class="food-icon-lg">🍔</div>
+                <div class="food-icon-lg">📤</div>
                 <div>You Give</div>
                 <div class="spinner-box">
                     <button class="spin-btn" onclick="adjustOffer('give', 1)">▲</button>
                     <input id="offer-give-val" class="spin-val" value="5" readonly>
                     <button class="spin-btn" onclick="adjustOffer('give', -1)">▼</button>
                 </div>
-                <select id="offer-give-type" style="margin-top:5px; padding:5px; width:100%;">
+                <select id="offer-give-type" onchange="calculateGain()" style="width:100%; margin-top:5px; padding:5px;">
                     <option value="burgers">Burgers</option>
                     <option value="fries">Fries</option>
                 </select>
@@ -355,19 +304,24 @@
             <div style="font-weight:bold; color:#aaa;">FOR</div>
 
             <div class="trade-item">
-                <div class="food-icon-lg">🍟</div>
+                <div class="food-icon-lg">📥</div>
                 <div>You Get</div>
                 <div class="spinner-box">
                     <button class="spin-btn" onclick="adjustOffer('get', 1)">▲</button>
                     <input id="offer-get-val" class="spin-val" value="5" readonly>
                     <button class="spin-btn" onclick="adjustOffer('get', -1)">▼</button>
                 </div>
-                <select id="offer-get-type" style="margin-top:5px; padding:5px; width:100%;">
+                <select id="offer-get-type" onchange="calculateGain()" style="width:100%; margin-top:5px; padding:5px;">
                     <option value="fries">Fries</option>
                     <option value="burgers">Burgers</option>
                 </select>
             </div>
         </div>
+
+        <div class="gain-loss-display">
+            Combos Gained From This Trade: <strong id="propose-gain-val">0</strong>
+        </div>
+
         <div class="trade-actions">
             <button class="modal-btn btn-accept" onclick="sendProposal()">Send Proposal</button>
             <button class="modal-btn btn-decline" onclick="closeModal('modal-propose')">Cancel</button>
@@ -376,15 +330,15 @@
 </div>
 
 <div id="modal-incoming" class="modal-overlay hidden">
-    <div class="trade-card" style="border: 4px solid var(--teal-btn);">
-        <div class="trade-header" style="background:var(--teal-btn); color:white;">
-            <span>🔔 New Proposal!</span>
+    <div class="trade-card" style="border: 4px solid #F5A623;">
+        <div class="trade-header" style="background:#F5A623; color:white;">
+            <span>🔔 New Offer from Partner!</span>
         </div>
         <div class="trade-body">
             <div class="trade-item">
                 <div class="food-icon-lg" id="inc-give-icon">🍟</div>
                 <div>Neighbor Gives</div>
-                <h1 id="inc-give-amt">8</h1>
+                <h1 id="inc-give-amt" style="margin:5px 0;">8</h1>
                 <div id="inc-give-name">Fries</div>
             </div>
             
@@ -393,10 +347,15 @@
             <div class="trade-item">
                 <div class="food-icon-lg" id="inc-get-icon">🍔</div>
                 <div>You Give</div>
-                <h1 id="inc-get-amt">4</h1>
+                <h1 id="inc-get-amt" style="margin:5px 0;">4</h1>
                 <div id="inc-get-name">Burgers</div>
             </div>
         </div>
+
+        <div class="gain-loss-display">
+            Combos Gained From This Trade: <strong id="inc-gain-val">0</strong>
+        </div>
+
         <div class="trade-actions">
             <button class="modal-btn btn-accept" onclick="acceptIncoming()">Accept</button>
             <button class="modal-btn btn-decline" onclick="declineIncoming()">Decline</button>
@@ -405,10 +364,10 @@
 </div>
 
 <div id="modal-result" class="modal-overlay hidden">
-    <div class="trade-card" style="padding: 20px;">
-        <h2 style="color:var(--teal-btn);">Round Complete</h2>
-        <h1><span id="res-score">0</span> Combos</h1>
-        <p id="res-msg"></p>
+    <div class="trade-card" style="padding: 30px;">
+        <h2 style="color:var(--teal-btn);">Morning Shift Complete</h2>
+        <h1><span id="res-score">0</span> Combos Sold</h1>
+        <p id="res-msg" style="color:#666;"></p>
         <button class="action-btn" onclick="location.reload()">Next Round</button>
     </div>
 </div>
@@ -419,43 +378,40 @@
 </div>
 
 <script>
-    // --- GAME STATE ---
+    // --- GAME VARIABLES ---
     let timeB = 15, timeF = 15;
     let rateB = 4, rateF = 8;
-    let productionB = 0, productionF = 0;
     
-    // Trade Tracking
-    let netTradeB = 0; // Positive = gained, Negative = lost
-    let netTradeF = 0;
+    // Inventory State
+    let productionB = 0, productionF = 0;
+    let netTradeB = 0, netTradeF = 0;
 
-    // Bot State
-    let botRateB = 8, botRateF = 2; // Bot is opposite of player
-    let botName = "Truck_" + Math.floor(Math.random() * 900 + 100);
+    // Bot Variables
     let botInterval;
-    let currentBotOffer = null; // Store active offer data
+    let botRateB = 8, botRateF = 2; 
+    let activeBotOffer = null;
 
-    // --- INIT ---
+    // --- INITIALIZATION ---
     function startGame() {
         document.getElementById('screen-intro').classList.add('hidden');
         document.getElementById('screen-game').classList.remove('hidden');
-        document.getElementById('partner-name').innerText = "Connected to: " + botName;
         
-        // Randomize Player Rates
-        rateB = (Math.floor(Math.random() * 3) + 1) * 2; // 2, 4, 6
-        rateF = (Math.floor(Math.random() * 3) + 3) * 2; // 6, 8, 10
-        // Ensure Bot is different (Opposite Comparative Advantage)
+        // Randomize Rates
+        rateB = (Math.floor(Math.random() * 3) + 1) * 2; // e.g. 2, 4, 6
+        rateF = (Math.floor(Math.random() * 3) + 3) * 2; // e.g. 6, 8, 10
+        // Bot is opposite
         botRateB = rateF; 
         botRateF = rateB;
 
         document.getElementById('rate-b').innerText = rateB;
         document.getElementById('rate-f').innerText = rateF;
-        
+        document.getElementById('partner-name').innerText = "Truck_" + Math.floor(Math.random()*1000);
+
         updateEngine();
         
-        // Start Bot Logic: Bot proposes a trade every 15-25 seconds
-        botInterval = setInterval(triggerBotProposal, 15000 + Math.random() * 10000);
+        // Start Bot Logic (Proposals happen every 12-20 seconds)
+        botInterval = setInterval(triggerBotProposal, 12000 + Math.random() * 8000);
         
-        // Start Timer
         startTimer();
     }
 
@@ -472,42 +428,38 @@
     }
 
     function updateEngine() {
-        // 1. Calculate Production
         productionB = timeB * rateB;
         productionF = timeF * rateF;
         
-        // 2. Update UI Times
+        let finalB = Math.max(0, productionB + netTradeB);
+        let finalF = Math.max(0, productionF + netTradeF);
+
         document.getElementById('time-b').innerText = timeB;
         document.getElementById('time-f').innerText = timeF;
-
-        // 3. Calculate Final Inventory (Prod + Net Trade)
-        let finalB = productionB + netTradeB;
-        let finalF = productionF + netTradeF;
-
-        // Prevent Negative Inventory (Undo trade logic if needed, but for simplicity we clamp to 0 visually)
-        if(finalB < 0) finalB = 0;
-        if(finalF < 0) finalF = 0;
-
         document.getElementById('inv-b').innerText = finalB;
         document.getElementById('inv-f').innerText = finalF;
 
-        // 4. Show Trade Diff
-        let diffBEl = document.getElementById('diff-b');
-        let diffFEl = document.getElementById('diff-f');
-        
-        diffBEl.innerText = netTradeB !== 0 ? (netTradeB > 0 ? `(+${netTradeB})` : `(${netTradeB})`) : "";
-        diffBEl.className = netTradeB >= 0 ? "trade-diff diff-pos" : "trade-diff diff-neg";
-        
-        diffFEl.innerText = netTradeF !== 0 ? (netTradeF > 0 ? `(+${netTradeF})` : `(${netTradeF})`) : "";
-        diffFEl.className = netTradeF >= 0 ? "trade-diff diff-pos" : "trade-diff diff-neg";
+        // Trade diff indicators
+        updateDiff('diff-b', netTradeB);
+        updateDiff('diff-f', netTradeF);
 
-        // 5. Combos
         document.getElementById('combo-count').innerText = Math.min(finalB, finalF);
     }
 
-    // --- PLAYER PROPOSALS ---
+    function updateDiff(id, val) {
+        let el = document.getElementById(id);
+        if(val === 0) {
+            el.innerText = "";
+        } else {
+            el.innerText = val > 0 ? `(+${val})` : `(${val})`;
+            el.className = val > 0 ? "trade-diff diff-pos" : "trade-diff diff-neg";
+        }
+    }
+
+    // --- PROPOSAL LOGIC (YOU SENDING) ---
     function openProposeModal() {
         document.getElementById('modal-propose').classList.remove('hidden');
+        calculateGain(); // Init calculation
     }
 
     function adjustOffer(side, delta) {
@@ -515,110 +467,139 @@
         let val = parseInt(el.value) + delta;
         if(val < 1) val = 1;
         el.value = val;
+        calculateGain(); // Recalculate on change
     }
 
-    function sendProposal() {
-        // Simply Accept/Decline Logic for Bot
-        // Bot accepts if the user offers a "Good Deal"
-        // A Good Deal is defined loosely as: Giving the Bot what the Bot is bad at producing.
-        
-        let giveType = document.getElementById('offer-give-type').value; // User Gives
-        let getType = document.getElementById('offer-get-type').value;   // User Gets
+    // --- THE "GAIN/LOSS" CALCULATOR ---
+    function calculateGain() {
+        let giveType = document.getElementById('offer-give-type').value;
+        let getType = document.getElementById('offer-get-type').value;
         let giveAmt = parseInt(document.getElementById('offer-give-val').value);
         let getAmt = parseInt(document.getElementById('offer-get-val').value);
 
-        // Bot Logic:
-        // Bot likes Burgers if Bot is bad at Burgers.
-        // Bot is bad at Burgers if botRateB < botRateF.
-        let botWants = (botRateB < botRateF) ? 'burgers' : 'fries';
-        
-        let accepted = false;
-        
-        // 1. Does user give what bot wants?
-        if(giveType === botWants) {
-            // 2. Is the price okay? (Bot shouldn't pay more than its own opportunity cost)
-            // Simple heuristic: Bot accepts if ratio is reasonable (e.g., < 2:1)
-            if (getAmt / giveAmt < 2.5) accepted = true;
-        }
+        // Current Inventory
+        let currB = productionB + netTradeB;
+        let currF = productionF + netTradeF;
+        let currCombos = Math.min(currB, currF);
 
-        // Check if Player actually has the goods
-        let playerHas = (giveType === 'burgers') ? (productionB + netTradeB) : (productionF + netTradeF);
-        if(playerHas < giveAmt) {
-            alert("You don't have enough " + giveType + " to offer!");
+        // Projected Inventory
+        let newB = currB;
+        let newF = currF;
+
+        if(giveType === 'burgers') newB -= giveAmt; else newF -= giveAmt;
+        if(getType === 'burgers') newB += getAmt; else newF += getAmt;
+
+        let newCombos = Math.min(newB, newF);
+        let diff = newCombos - currCombos;
+
+        let el = document.getElementById('propose-gain-val');
+        el.innerText = diff > 0 ? "+" + diff : diff;
+        el.style.color = diff >= 0 ? "green" : "red";
+    }
+
+    function sendProposal() {
+        // Simple "Sensible" Bot Acceptance Logic
+        let giveType = document.getElementById('offer-give-type').value;
+        let giveAmt = parseInt(document.getElementById('offer-give-val').value);
+        let getAmt = parseInt(document.getElementById('offer-get-val').value);
+        
+        // 1. Check if user has items
+        let userHas = (giveType === 'burgers') ? (productionB + netTradeB) : (productionF + netTradeF);
+        if(userHas < giveAmt) {
+            alert("Insufficient Inventory!");
             return;
         }
 
-        closeModal('modal-propose');
+        // 2. Bot Decides (Is this a good deal for the Bot?)
+        // Bot accepts if you give what it needs (it needs what it is bad at)
+        // Bot is bad at 'fries' if botRateF < botRateB
+        let botNeeds = (botRateF < botRateB) ? 'fries' : 'burgers';
+        let botAccepts = false;
 
-        if(accepted) {
-            alert(botName + " ACCEPTED your offer!");
-            if(giveType === 'burgers') { netTradeB -= giveAmt; netTradeF += getAmt; }
-            else { netTradeF -= giveAmt; netTradeB += getAmt; }
-            updateEngine();
-        } else {
-            alert(botName + " DECLINED. They don't want that deal.");
+        if(giveType === botNeeds) {
+            // Price Check: Bot won't pay crazy amounts
+            // Accept if GetAmt/GiveAmt ratio is < 2
+            if(getAmt / giveAmt <= 2.0) botAccepts = true;
         }
+
+        // Fake "Processing" delay
+        closeModal('modal-propose');
+        setTimeout(() => {
+            if(botAccepts) {
+                alert("Partner ACCEPTED your deal!");
+                applyTrade(-giveAmt, getAmt, giveType, document.getElementById('offer-get-type').value);
+            } else {
+                alert("Partner DECLINED. (Tip: Offer them what they are bad at producing)");
+            }
+        }, 500);
     }
 
-    // --- BOT PROPOSALS ---
+    // --- INCOMING OFFERS (BOT SENDING) ---
     function triggerBotProposal() {
-        if(!document.getElementById('modal-propose').classList.contains('hidden')) return; // Don't interrupt user
         if(!document.getElementById('modal-result').classList.contains('hidden')) return;
 
-        // Bot generates offer based on its surplus
-        // Bot gives what it is good at.
-        let botGoodAt = (botRateB > botRateF) ? 'Burgers' : 'Fries';
-        let botBadAt = (botGoodAt === 'Burgers') ? 'Fries' : 'Burgers';
+        // Bot generates a "Sensible" offer
+        // Bot gives what it is GOOD at, asks for what it is BAD at.
+        let botGiveType = (botRateB > botRateF) ? 'Burgers' : 'Fries';
+        let botAskType = (botGiveType === 'Burgers') ? 'Fries' : 'Burgers';
 
-        // Offer: Bot gives 5 Good for 3 Bad (Just an example ratio)
-        let offerGive = Math.floor(Math.random() * 3) + 4; // 4 to 6
-        let offerGet = Math.floor(Math.random() * 3) + 2;  // 2 to 4
+        // Ratio: Bot gives 3 for 2, or 5 for 3. (Roughly 1.5 ratio)
+        let amtGive = Math.floor(Math.random() * 3) + 4; // 4-6
+        let amtAsk = Math.floor(Math.random() * 2) + 2;  // 2-3
 
-        currentBotOffer = {
-            giveName: botGoodAt,
-            giveAmt: offerGive,
-            getName: botBadAt,
-            getAmt: offerGet
-        };
+        activeBotOffer = { giveType: botGiveType, giveAmt: amtGive, askType: botAskType, askAmt: amtAsk };
 
         // Update UI
-        document.getElementById('inc-give-icon').innerText = (botGoodAt === 'Burgers') ? '🍔' : '🍟';
-        document.getElementById('inc-give-name').innerText = botGoodAt;
-        document.getElementById('inc-give-amt').innerText = offerGive;
+        document.getElementById('inc-give-icon').innerText = (botGiveType === 'Burgers') ? '🍔' : '🍟';
+        document.getElementById('inc-give-name').innerText = botGiveType;
+        document.getElementById('inc-give-amt').innerText = amtGive;
 
-        document.getElementById('inc-get-icon').innerText = (botBadAt === 'Burgers') ? '🍔' : '🍟';
-        document.getElementById('inc-get-name').innerText = botBadAt;
-        document.getElementById('inc-get-amt').innerText = offerGet;
+        document.getElementById('inc-get-icon').innerText = (botAskType === 'Burgers') ? '🍔' : '🍟';
+        document.getElementById('inc-get-name').innerText = botAskType;
+        document.getElementById('inc-get-amt').innerText = amtAsk;
 
+        calculateIncomingGain(); // Update the gain/loss number for this specific offer
         document.getElementById('modal-incoming').classList.remove('hidden');
     }
 
-    function acceptIncoming() {
-        // User pays "GetAmt" (what bot wants)
-        // User receives "GiveAmt" (what bot gives)
-        let payAmt = currentBotOffer.getAmt;
-        let payType = currentBotOffer.getName;
-        let receiveAmt = currentBotOffer.giveAmt;
-        let receiveType = currentBotOffer.giveName;
-
-        // Check funds
-        let playerHas = (payType === 'Burgers') ? (productionB + netTradeB) : (productionF + netTradeF);
+    function calculateIncomingGain() {
+        if(!activeBotOffer) return;
         
-        if(playerHas < payAmt) {
-            alert("You cannot accept! Insufficient inventory.");
+        let currB = productionB + netTradeB;
+        let currF = productionF + netTradeF;
+        let currCombos = Math.min(currB, currF);
+
+        let newB = currB;
+        let newF = currF;
+
+        // You Receive (GiveAmt) of GiveType
+        if(activeBotOffer.giveType === 'Burgers') newB += activeBotOffer.giveAmt; 
+        else newF += activeBotOffer.giveAmt;
+
+        // You Pay (AskAmt) of AskType
+        if(activeBotOffer.askType === 'Burgers') newB -= activeBotOffer.askAmt; 
+        else newF -= activeBotOffer.askAmt;
+
+        let newCombos = Math.min(newB, newF);
+        let diff = newCombos - currCombos;
+
+        let el = document.getElementById('inc-gain-val');
+        el.innerText = diff > 0 ? "+" + diff : diff;
+        el.style.color = diff >= 0 ? "green" : "red";
+    }
+
+    function acceptIncoming() {
+        let payType = activeBotOffer.askType;
+        let payAmt = activeBotOffer.askAmt;
+
+        // Check Funds
+        let userHas = (payType === 'Burgers') ? (productionB + netTradeB) : (productionF + netTradeF);
+        if(userHas < payAmt) {
+            alert("You don't have enough inventory to accept!");
             return;
         }
 
-        // Execute
-        if(payType === 'Burgers') {
-            netTradeB -= payAmt;
-            netTradeF += receiveAmt;
-        } else {
-            netTradeF -= payAmt;
-            netTradeB += receiveAmt;
-        }
-
-        updateEngine();
+        applyTrade(activeBotOffer.giveAmt, -activeBotOffer.askAmt, activeBotOffer.giveType, activeBotOffer.askType);
         closeModal('modal-incoming');
     }
 
@@ -626,20 +607,20 @@
         closeModal('modal-incoming');
     }
 
-    // --- UTILS ---
-    function closeModal(id) {
-        document.getElementById(id).classList.add('hidden');
+    function applyTrade(delta1, delta2, type1, type2) {
+        // Delta1 is amount of Type1 (positive or negative)
+        // Delta2 is amount of Type2 (positive or negative)
+        if(type1.toLowerCase() === 'burgers') netTradeB += delta1; else netTradeF += delta1;
+        if(type2.toLowerCase() === 'burgers') netTradeB += delta2; else netTradeF += delta2;
+        updateEngine();
     }
 
+    // --- UTILS ---
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+    
     function submitRound() {
         clearInterval(botInterval);
-        let final = document.getElementById('combo-count').innerText;
-        document.getElementById('res-score').innerText = final;
-        
-        // Simple feedback
-        let msg = (parseInt(final) > 40) ? "Excellent trading strategy!" : "Tip: Try to trade for items that are hard for you to make.";
-        document.getElementById('res-msg').innerText = msg;
-        
+        document.getElementById('res-score').innerText = document.getElementById('combo-count').innerText;
         document.getElementById('modal-result').classList.remove('hidden');
     }
 
@@ -650,10 +631,7 @@
             let m = Math.floor(sec/60);
             let s = sec%60;
             document.getElementById('timer').innerText = `0${m}:${s<10?'0'+s:s}`;
-            if(sec <= 0) {
-                clearInterval(timerInt);
-                submitRound();
-            }
+            if(sec <= 0) { clearInterval(timerInt); submitRound(); }
         }, 1000);
     }
 </script>
