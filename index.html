@@ -3,24 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Food Truck: Production Challenge</title>
+    <title>Food Truck Simulation</title>
     <style>
         :root {
-            /* Colors extracted from your screenshots */
-            --bg-color: #FCEFC7;  /* Beige background */
-            --teal-btn: #00BFA5;  /* The specific teal color for + buttons */
+            /* Colors based on your screenshots */
+            --bg-color: #FDF1D6;       /* Main background */
+            --box-bg: #FCEFC7;         /* Prep Time box background */
+            --dark-beige: #F9E2A8;     /* Darker accent */
+            --teal-btn: #00BFA5;       /* Action buttons */
             --teal-hover: #008F7A;
-            --orange-truck: #F5A623;
-            --text-dark: #4A4A4A;
-            --border-blue: #2D74DA; /* The blue border for the top bar */
-            --box-bg: #FFFFFF;
+            --blue-border: #2D74DA;    /* Outlines */
+            --blue-fill: #EAF4FF;      /* Input background */
+            --orange: #F5A623;
+            --text-dark: #333333;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
             margin: 0;
-            padding: 20px;
+            padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -31,292 +33,465 @@
         .container {
             width: 100%;
             max-width: 900px;
-            /* No white card background to match the open aesthetic of screenshot */
+            padding: 20px;
             text-align: center;
         }
 
-        /* TOP PRODUCTION BAR */
-        .production-bar-label {
-            color: #2D74DA;
+        /* --- UTILITY CLASSES --- */
+        .hidden { display: none !important; }
+        .flex-center { display: flex; justify-content: center; align-items: center; }
+        
+        /* --- 1. INTRO SCREEN --- */
+        .intro-card {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .truck-illustration {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        
+        /* --- 2. GAME SCREEN --- */
+        
+        /* Top Productivity Bar */
+        .prod-bar-container {
+            margin-bottom: 30px;
+        }
+        .prod-label {
+            color: var(--blue-border);
             font-weight: bold;
             margin-bottom: 5px;
             font-size: 14px;
         }
-        
-        .production-bar {
+        .prod-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border: 2px solid var(--border-blue);
-            border-radius: 8px; /* Rounded corners like screenshot */
-            padding: 10px 40px;
-            background: transparent;
-            margin-bottom: 40px;
-            color: #2D74DA;
+            border: 2px solid var(--blue-border);
+            border-radius: 10px;
+            padding: 12px 40px;
+            background: rgba(255,255,255,0.5);
             font-size: 18px;
             font-weight: bold;
+            color: var(--blue-border);
         }
 
-        /* MAIN GAME AREA (Two Columns) */
-        .game-area {
+        /* Main Game Layout (Left/Right) */
+        .game-layout {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            position: relative;
+            gap: 40px; /* Fixes overlap issues */
         }
 
-        /* Truck Graphic (Left Side background hint) */
-        .truck-bg {
-            position: absolute;
-            left: -50px;
-            top: 20px;
-            width: 400px;
-            height: 300px;
-            background-color: rgba(245, 166, 35, 0.2); /* Faint orange truck silhouette */
-            z-index: -1;
-            border-radius: 20px;
-            /* Use CSS shapes to approximate truck if needed, or just a placeholder color */
+        /* Left Column: Prep Time (The Beige Box) */
+        .prep-box {
+            background-color: var(--dark-beige); /* Distinct background per screenshot */
+            padding: 25px;
+            border-radius: 15px;
+            flex: 1;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.05);
         }
 
-        /* COLUMN HEADERS */
-        .col-header {
-            color: #2D74DA;
-            font-size: 24px;
+        .section-title {
+            color: var(--blue-border);
+            font-size: 22px;
             font-weight: bold;
             margin-bottom: 20px;
         }
 
-        /* INPUT ROW STYLING */
-        .input-row {
+        /* Input Rows */
+        .input-group {
             display: flex;
             align-items: center;
-            margin-bottom: 25px;
+            justify-content: space-between;
+            margin-bottom: 20px;
             background: white;
-            border: 2px solid var(--border-blue);
-            border-radius: 10px;
-            padding: 5px;
-            width: 300px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        
-        /* The "15 min" text box */
-        .time-display {
-            flex: 1;
-            font-size: 20px;
-            color: #2D74DA;
-            border: none;
-            background: transparent;
-            text-align: center;
-            font-weight: bold;
+            border: 2px solid var(--blue-border);
+            border-radius: 8px;
+            overflow: hidden;
+            height: 55px;
         }
 
-        /* The Teal Plus Button */
-        .plus-btn {
-            background-color: var(--teal-btn);
+        .control-btn {
+            background: var(--teal-btn);
             color: white;
             border: none;
             width: 50px;
-            height: 50px;
-            font-size: 30px;
+            height: 100%;
+            font-size: 24px;
             font-weight: bold;
-            border-radius: 0 6px 6px 0; /* Rounded right corners only */
             cursor: pointer;
-            transition: background 0.2s;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            transition: 0.2s;
         }
-        .plus-btn:hover {
-            background-color: var(--teal-hover);
-        }
-        .plus-btn:active {
-            transform: scale(0.95);
+        .control-btn:hover { background: var(--teal-hover); }
+        .control-btn:active { transform: scale(0.95); }
+
+        .time-display {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--blue-border);
+            width: 100px;
+            text-align: center;
         }
 
-        /* PREPARE COLUMN (Right Side) */
+        /* Right Column: Output */
+        .prepare-col {
+            flex: 1;
+            padding-top: 25px; /* Align with input box title */
+        }
+
         .output-row {
             display: flex;
             align-items: center;
-            margin-bottom: 25px;
-            width: 300px;
+            margin-bottom: 20px;
+            height: 55px;
         }
-
-        .food-icon {
-            font-size: 40px;
-            width: 60px;
-            text-align: center;
-            margin-right: 15px;
-        }
-
-        .output-box {
+        
+        .food-icon { font-size: 35px; width: 50px; margin-right: 10px; }
+        
+        .output-display {
             flex: 1;
-            border: 2px solid var(--border-blue);
-            border-radius: 10px;
-            padding: 12px;
+            height: 100%;
+            border: 2px solid var(--blue-border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 20px;
-            color: #2D74DA;
             font-weight: bold;
+            color: var(--blue-border);
             background: white;
-            text-align: center;
         }
 
-        /* BIG BUTTON AT BOTTOM */
-        .bring-btn {
+        /* Main Action Button */
+        .action-btn {
             background-color: var(--teal-btn);
             color: white;
             border: none;
-            padding: 15px 60px;
+            padding: 18px 60px;
             font-size: 20px;
             font-weight: bold;
             border-radius: 8px;
             cursor: pointer;
             margin-top: 40px;
-            box-shadow: 0 4px 0 #008F7A; /* 3D effect */
+            box-shadow: 0 4px 0 #008f7a;
+            transition: transform 0.1s;
         }
-        .bring-btn:hover {
-            background-color: var(--teal-hover);
-            transform: translateY(2px);
-            box-shadow: 0 2px 0 #008F7A;
-        }
+        .action-btn:hover { transform: translateY(2px); box-shadow: 0 2px 0 #008f7a; }
 
-        /* Results Modal */
-        .modal {
-            display: none;
+        /* --- 3. MODALS & RESULTS --- */
+        .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.6);
+            display: flex;
             justify-content: center;
             align-items: center;
             z-index: 100;
         }
-        .modal-content {
-            background: white;
-            padding: 40px;
+        
+        .result-card {
+            background: var(--bg-color);
+            width: 500px;
+            padding: 30px;
             border-radius: 15px;
             text-align: center;
-            width: 400px;
+            border: 5px solid white;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
         }
+
+        .stats-table {
+            width: 100%;
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid #ddd;
+        }
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .stats-row:last-child { border-bottom: none; }
+
+        .rank-badge {
+            background: var(--orange);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-top: 10px;
+            display: inline-block;
+        }
+
+        /* Status Bar at Bottom */
+        .status-bar {
+            position: fixed;
+            bottom: 0; left: 0; width: 100%;
+            background: #223;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            font-family: monospace;
+            box-sizing: border-box;
+        }
+
     </style>
 </head>
 <body>
 
-<div class="container">
+<div id="screen-intro" class="container">
+    <div class="intro-card">
+        <div class="truck-illustration">🚚 🍟</div>
+        <h1 style="color: #333; margin-bottom: 10px;">YOUR FOOD TRUCK</h1>
+        <p style="color: #666; font-size: 18px; line-height: 1.6;">
+            Every morning you allocate <strong>30 minutes</strong> to prepare food.<br>
+            Your goal is to maximize <strong>Combos</strong> sold.<br>
+            <br>
+            1 Combo = 1 Burger 🍔 + 1 Fry 🍟
+        </p>
+        <div style="margin: 30px 0; padding: 15px; background: #eee; border-radius: 8px;">
+            <strong>Game Structure:</strong> 2 Rounds
+        </div>
+        <button class="action-btn" onclick="startGame()">Start Round 1</button>
+    </div>
+</div>
+
+<div id="screen-game" class="container hidden">
     
-    <div class="production-bar-label">Your Per Minute Production:</div>
-    <div class="production-bar">
-        <span><span id="rate-f">8</span> Fries</span>
-        <span style="font-size: 14px; color: #999;">-or-</span>
-        <span><span id="rate-b">4</span> Burgers</span>
+    <div class="prod-bar-container">
+        <div class="prod-label">Your Per Minute Production (Round <span id="round-num">1</span>/2):</div>
+        <div class="prod-bar">
+            <span><span id="rate-f">8</span> Fries</span>
+            <span style="font-size: 14px; color: #999;">-or-</span>
+            <span><span id="rate-b">4</span> Burgers</span>
+        </div>
     </div>
 
-    <div class="game-area">
-        <div class="truck-bg"></div>
-
-        <div style="text-align: center;">
-            <div class="col-header">Prep Time</div>
+    <div class="game-layout">
+        <div class="prep-box">
+            <div class="section-title">Prep Time</div>
             
-            <div class="input-row">
+            <div class="input-group">
+                <button class="control-btn" onclick="adjustTime('burgers', -1)">-</button>
                 <div class="time-display"><span id="time-b">15</span> min</div>
-                <button class="plus-btn" onclick="addBurgerTime()">+</button>
+                <button class="control-btn" onclick="adjustTime('burgers', 1)">+</button>
             </div>
 
-            <div class="input-row">
+            <div class="input-group">
+                <button class="control-btn" onclick="adjustTime('fries', -1)">-</button>
                 <div class="time-display"><span id="time-f">15</span> min</div>
-                <button class="plus-btn" onclick="addFriesTime()">+</button>
+                <button class="control-btn" onclick="adjustTime('fries', 1)">+</button>
             </div>
+            
+            <p style="font-size: 12px; color: #666;">Total time must equal 30 min</p>
         </div>
 
-        <div style="text-align: center;">
-            <div class="col-header">Prepare</div>
+        <div class="prepare-col">
+            <div class="section-title">Prepare</div>
 
             <div class="output-row">
                 <div class="food-icon">🍔</div>
-                <div class="output-box" id="out-b">60</div>
+                <div class="output-display" id="out-b">60</div>
             </div>
 
             <div class="output-row">
                 <div class="food-icon">🍟</div>
-                <div class="output-box" id="out-f">120</div>
+                <div class="output-display" id="out-f">120</div>
             </div>
         </div>
     </div>
 
-    <button class="bring-btn" onclick="finishGame()">
+    <button class="action-btn" onclick="submitRound()">
         Bring <span id="combo-count">60</span> Combos
     </button>
-
 </div>
 
-<div id="result-modal" class="modal">
-    <div class="modal-content">
-        <h2 style="color: var(--teal-btn);">Morning Shift Complete!</h2>
-        <p style="font-size: 18px;">You brought:</p>
-        <h1 style="font-size: 48px; margin: 10px 0;" id="final-score">60</h1>
-        <p><strong>Combos</strong></p>
-        <p style="color: #666; font-size: 14px;">(Remember: A combo needs 1 Burger AND 1 Fry)</p>
-        <button class="bring-btn" onclick="location.reload()" style="margin-top: 20px; padding: 10px 30px;">Play Again</button>
+<div id="modal-result" class="modal-overlay hidden">
+    <div class="result-card">
+        <h2 style="color: var(--teal-btn); margin-top:0;">Round Complete!</h2>
+        
+        <div class="stats-table">
+            <div class="stats-row">
+                <span>Your Combos:</span>
+                <strong style="font-size: 20px;" id="res-score">0</strong>
+            </div>
+            <div class="stats-row">
+                <span>Class Average (Simulated):</span>
+                <span id="res-avg">0</span>
+            </div>
+            <div class="stats-row">
+                <span>Optimal Possible:</span>
+                <span id="res-opt">0</span>
+            </div>
+        </div>
+
+        <div class="rank-badge" id="res-rank">Rank: 12 / 40</div>
+        
+        <p id="res-msg" style="margin: 20px 0; color: #555;">Great work!</p>
+
+        <button class="action-btn" id="btn-next" onclick="nextRound()" style="padding: 10px 40px; font-size: 16px;">Next Round >></button>
     </div>
 </div>
 
-<script>
-    // GAME CONFIGURATION (Change these numbers to change the math)
-    const TOTAL_TIME = 30;
-    const RATE_BURGERS = 4; // Burgers per minute
-    const RATE_FRIES = 8;   // Fries per minute
+<div class="status-bar">
+    <div>🎮 SimuEcon</div>
+    <div id="timer">00:00:00</div>
+    <div>👥 Class: 38</div>
+</div>
 
-    // State Variables
+<script>
+    // --- GAME STATE ---
+    const TOTAL_TIME = 30;
+    const TOTAL_ROUNDS = 2;
+    let currentRound = 1;
     let timeBurgers = 15;
     let timeFries = 15;
+    
+    // Dynamic Rates (Will be randomized)
+    let rateB = 4;
+    let rateF = 8;
 
-    // Initialize UI on load
-    window.onload = function() {
-        document.getElementById('rate-b').innerText = RATE_BURGERS;
-        document.getElementById('rate-f').innerText = RATE_FRIES;
+    // --- INITIALIZATION ---
+    function startGame() {
+        document.getElementById('screen-intro').classList.add('hidden');
+        document.getElementById('screen-game').classList.remove('hidden');
+        setupRound();
+    }
+
+    function setupRound() {
+        // 1. Reset Time
+        timeBurgers = 15;
+        timeFries = 15;
+
+        // 2. Randomize Productivity (Even numbers between 2 and 10)
+        // Ensure they aren't equal to make optimization interesting
+        do {
+            rateB = (Math.floor(Math.random() * 5) + 1) * 2; // 2, 4, 6, 8, 10
+            rateF = (Math.floor(Math.random() * 5) + 1) * 2;
+        } while (rateB === rateF);
+
+        // 3. Update UI Text
+        document.getElementById('round-num').innerText = currentRound;
+        document.getElementById('rate-b').innerText = rateB;
+        document.getElementById('rate-f').innerText = rateF;
+        
         updateUI();
-    };
-
-    // LOGIC: Add time to Burgers (Steals from Fries)
-    function addBurgerTime() {
-        if (timeBurgers < TOTAL_TIME) {
-            timeBurgers++;
-            timeFries--;
-            updateUI();
-        }
     }
 
-    // LOGIC: Add time to Fries (Steals from Burgers)
-    function addFriesTime() {
-        if (timeFries < TOTAL_TIME) {
-            timeFries++;
-            timeBurgers--;
-            updateUI();
+    // --- CORE LOGIC ---
+    function adjustTime(item, amount) {
+        if (item === 'burgers') {
+            // If adding to burgers, we must have enough fries time to take from
+            if (amount > 0 && timeFries > 0) {
+                timeBurgers++;
+                timeFries--;
+            } else if (amount < 0 && timeBurgers > 0) {
+                timeBurgers--;
+                timeFries++;
+            }
+        } else { // Item is fries
+            if (amount > 0 && timeBurgers > 0) {
+                timeFries++;
+                timeBurgers--;
+            } else if (amount < 0 && timeFries > 0) {
+                timeFries--;
+                timeBurgers++;
+            }
         }
+        updateUI();
     }
 
-    // Update all numbers on screen
     function updateUI() {
-        // Update Time Displays
         document.getElementById('time-b').innerText = timeBurgers;
         document.getElementById('time-f').innerText = timeFries;
 
-        // Calculate Production
-        let totalBurgers = timeBurgers * RATE_BURGERS;
-        let totalFries = timeFries * RATE_FRIES;
+        let prodB = timeBurgers * rateB;
+        let prodF = timeFries * rateF;
         
-        // Update Output Boxes
-        document.getElementById('out-b').innerText = totalBurgers;
-        document.getElementById('out-f').innerText = totalFries;
+        document.getElementById('out-b').innerText = prodB;
+        document.getElementById('out-f').innerText = prodF;
 
-        // Calculate and Update Combos (The Minimum of the two)
-        let combos = Math.min(totalBurgers, totalFries);
+        let combos = Math.min(prodB, prodF);
         document.getElementById('combo-count').innerText = combos;
     }
 
-    function finishGame() {
-        let finalScore = document.getElementById('combo-count').innerText;
-        document.getElementById('final-score').innerText = finalScore;
-        document.getElementById('result-modal').style.display = 'flex';
+    // --- SCORING & FAKE PEERS ---
+    function submitRound() {
+        let finalScore = Math.min(timeBurgers * rateB, timeFries * rateF);
+        
+        // Calculate Optimal Score for Comparison
+        // Optimal time on burgers (tb) satisfies: tb * Rb = (30 - tb) * Rf
+        // tb * Rb = 30Rf - tb * Rf  => tb(Rb + Rf) = 30Rf => tb = 30Rf / (Rb + Rf)
+        let optTimeB = (30 * rateF) / (rateB + rateF);
+        // Since we only allow integers in UI, optimal is the integer closest to this
+        let bestScore = 0;
+        for(let t=0; t<=30; t++) {
+            let s = Math.min(t*rateB, (30-t)*rateF);
+            if(s > bestScore) bestScore = s;
+        }
+
+        // Generate Fake Class Stats
+        // Most students get near optimal, some fail.
+        let classSize = 38;
+        let betterThanUser = 0;
+        
+        // Simulation loop
+        for(let i=0; i<classSize; i++) {
+            // Fake students randomly play between 50% efficiency and 100% efficiency
+            let efficiency = 0.5 + (Math.random() * 0.5);
+            let simScore = Math.floor(bestScore * efficiency);
+            if (simScore > finalScore) betterThanUser++;
+        }
+
+        let rank = betterThanUser + 1;
+        let avg = Math.floor(bestScore * 0.85); // Fake average
+
+        // POPULATE RESULTS
+        document.getElementById('res-score').innerText = finalScore;
+        document.getElementById('res-avg').innerText = avg;
+        document.getElementById('res-opt').innerText = bestScore;
+        document.getElementById('res-rank').innerText = `Rank: ${rank} / ${classSize + 1}`;
+        
+        if(finalScore === bestScore) {
+            document.getElementById('res-msg').innerText = "Perfect! You maximized production.";
+            document.getElementById('res-rank').style.background = "#00BFA5"; // Teal for win
+        } else {
+            document.getElementById('res-msg').innerText = "You could have produced more. Check the Optimal score.";
+            document.getElementById('res-rank').style.background = "#F5A623"; // Orange for normal
+        }
+
+        document.getElementById('modal-result').classList.remove('hidden');
+
+        // Logic for "Finish Game" vs "Next Round"
+        let btn = document.getElementById('btn-next');
+        if(currentRound >= TOTAL_ROUNDS) {
+            btn.innerText = "Finish Game";
+            btn.onclick = function() { location.reload(); }; // Reset game
+        } else {
+            btn.innerText = "Next Round >>";
+            btn.onclick = nextRound;
+        }
     }
+
+    function nextRound() {
+        document.getElementById('modal-result').classList.add('hidden');
+        currentRound++;
+        setupRound();
+    }
+
+    // Timer Animation (Fake)
+    setInterval(() => {
+        let d = new Date();
+        document.getElementById('timer').innerText = d.toLocaleTimeString();
+    }, 1000);
+
 </script>
 
 </body>
