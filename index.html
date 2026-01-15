@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Food Truck Simulation</title>
+    <title>Food Truck: Trade Simulation</title>
     <style>
         :root {
-            --bg-color: #FDF1D6;       /* Main background */
-            --box-bg: #FCEFC7;         /* Prep Time box background */
-            --dark-beige: #F9E2A8;     /* Darker accent */
-            --teal-btn: #00BFA5;       /* Action buttons */
+            --bg-color: #FDF1D6;       
+            --box-bg: #FCEFC7;         
+            --teal-btn: #00BFA5;       
             --teal-hover: #008F7A;
-            --blue-border: #2D74DA;    /* Outlines */
+            --blue-border: #2D74DA;    
             --orange: #F5A623;
             --text-dark: #333333;
+            --overlay-bg: rgba(0,0,0,0.6);
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
             margin: 0;
-            padding: 0;
+            padding: 20px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -30,43 +30,24 @@
 
         .container {
             width: 100%;
-            max-width: 900px;
-            padding: 20px;
+            max-width: 950px;
             text-align: center;
         }
 
         .hidden { display: none !important; }
         
-        /* --- 1. INTRO SCREEN --- */
+        /* --- INTRO SCREEN --- */
         .intro-card {
             background: white;
             padding: 40px;
             border-radius: 20px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            text-align: left; /* Better for instructions */
             max-width: 600px;
             margin: 0 auto;
+            text-align: left;
         }
-        .intro-header { text-align: center; margin-bottom: 20px; }
-        .truck-illustration { font-size: 60px; display: block; margin-bottom: 10px; }
-        
-        .instruction-list {
-            background: #f9f9f9;
-            padding: 20px 30px;
-            border-radius: 10px;
-            border-left: 5px solid var(--teal-btn);
-            margin: 20px 0;
-        }
-        .instruction-list li { margin-bottom: 10px; line-height: 1.5; }
 
-        /* --- 2. GAME SCREEN --- */
-        .prod-bar-container { margin-bottom: 30px; text-align: center; }
-        .prod-label {
-            color: var(--blue-border);
-            font-weight: bold;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
+        /* --- GAME HEADER --- */
         .prod-bar {
             display: inline-flex;
             justify-content: center;
@@ -74,151 +55,196 @@
             gap: 20px;
             border: 2px solid var(--blue-border);
             border-radius: 10px;
-            padding: 12px 40px;
-            background: rgba(255,255,255,0.5);
+            padding: 10px 40px;
+            background: rgba(255,255,255,0.6);
             font-size: 18px;
             font-weight: bold;
             color: var(--blue-border);
-            min-width: 300px;
-        }
-
-        .game-layout {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 40px;
-        }
-
-        /* Left Column: Prep Time */
-        .prep-box {
-            background-color: var(--dark-beige);
-            padding: 25px;
-            border-radius: 15px;
-            flex: 1;
-        }
-
-        .section-title {
-            color: var(--blue-border);
-            font-size: 22px;
-            font-weight: bold;
             margin-bottom: 20px;
-            text-align: center;
+        }
+
+        /* --- MAIN GAME GRID --- */
+        .game-layout {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        /* LEFT: PREP TIME */
+        .prep-box {
+            background-color: var(--box-bg);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #ecdca8;
         }
 
         .input-group {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             background: white;
-            border: 2px solid var(--blue-border);
+            border: 2px solid var(--teal-btn);
             border-radius: 8px;
             overflow: hidden;
-            height: 55px;
+            height: 50px;
         }
 
         .control-btn {
             background: var(--teal-btn);
             color: white;
             border: none;
-            width: 50px;
+            width: 45px;
             height: 100%;
             font-size: 24px;
-            font-weight: bold;
             cursor: pointer;
-            transition: 0.2s;
         }
         .control-btn:hover { background: var(--teal-hover); }
 
-        .time-display {
-            font-size: 20px;
-            font-weight: bold;
-            color: var(--blue-border);
-            width: 100px;
-            text-align: center;
-        }
-
-        /* Right Column: Output */
-        .prepare-col { flex: 1; padding-top: 25px; }
-
-        .output-row {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-            height: 55px;
-        }
-        
-        .food-icon { font-size: 35px; width: 50px; margin-right: 10px; }
-        
-        .output-display {
-            flex: 1;
-            height: 100%;
-            border: 2px solid var(--blue-border);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            font-weight: bold;
-            color: var(--blue-border);
+        /* RIGHT: OUTPUT & TRADING */
+        .output-box {
             background: white;
+            border: 2px solid var(--blue-border);
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+        }
+
+        .inventory-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .inventory-row:last-child { border-bottom: none; }
+
+        .trade-diff { font-size: 14px; color: #666; font-weight: normal; }
+        .diff-pos { color: green; }
+        .diff-neg { color: red; }
+
+        /* BUTTONS */
+        .btn-row {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
         }
 
         .action-btn {
+            flex: 1;
             background-color: var(--teal-btn);
             color: white;
             border: none;
-            padding: 18px 60px;
-            font-size: 20px;
+            padding: 15px;
+            font-size: 18px;
             font-weight: bold;
             border-radius: 8px;
             cursor: pointer;
-            margin-top: 40px;
             box-shadow: 0 4px 0 #008f7a;
-            width: 100%;
-            max-width: 400px;
         }
         .action-btn:hover { transform: translateY(2px); box-shadow: 0 2px 0 #008f7a; }
+        .btn-dark { background-color: #006064; box-shadow: 0 4px 0 #00363a; }
+        .btn-dark:hover { box-shadow: 0 2px 0 #00363a; }
 
-        /* --- 3. MODALS --- */
+        /* --- TRADE MODAL (MobLab Style) --- */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6);
+            background: var(--overlay-bg);
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 100;
-        }
-        
-        .result-card {
-            background: var(--bg-color);
-            width: 500px;
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            border: 5px solid white;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            z-index: 1000;
         }
 
-        .stats-table {
-            width: 100%;
-            margin: 20px 0;
+        .trade-card {
             background: white;
-            border-radius: 10px;
-            padding: 15px;
-            border: 1px solid #ddd;
+            width: 550px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            animation: popIn 0.3s ease;
         }
-        .stats-row {
+
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .trade-header {
+            padding: 15px;
+            text-align: center;
+            color: var(--blue-border);
+            font-size: 20px;
+            font-weight: bold;
+            border-bottom: 1px solid #eee;
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #eee;
-            font-size: 18px;
+            align-items: center;
         }
-        .stats-row:last-child { border-bottom: none; }
 
-        /* Status Bar at Bottom */
+        .trade-body {
+            padding: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .trade-item {
+            text-align: center;
+            width: 140px;
+        }
+        
+        .food-icon-lg { font-size: 50px; display: block; margin-bottom: 10px; }
+
+        .spinner-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 2px solid var(--teal-btn);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .spin-btn {
+            background: var(--teal-btn);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 5px;
+            cursor: pointer;
+        }
+        .spin-val {
+            padding: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            width: 100%;
+            border: none;
+            text-align: center;
+        }
+
+        .trade-actions {
+            display: flex;
+        }
+        .modal-btn {
+            flex: 1;
+            padding: 20px;
+            border: none;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+        }
+        .btn-accept { background: var(--teal-btn); }
+        .btn-accept:hover { background: var(--teal-hover); }
+        .btn-decline { background: #999; }
+        .btn-decline:hover { background: #777; }
+
+        /* STATUS BAR */
         .status-bar {
             position: fixed;
             bottom: 0; left: 0; width: 100%;
@@ -227,15 +253,9 @@
             padding: 15px 30px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
             font-family: monospace;
             box-sizing: border-box;
             font-size: 18px;
-        }
-        
-        .timer-box {
-            font-weight: bold;
-            color: #F5A623;
         }
 
     </style>
@@ -244,257 +264,398 @@
 
 <div id="screen-intro" class="container">
     <div class="intro-card">
-        <div class="intro-header">
-            <span class="truck-illustration">🚚</span>
-            <h1 style="color: #333; margin: 0;">Food Truck Challenge</h1>
-        </div>
-        
-        <h3>How to Play:</h3>
-        <ul class="instruction-list">
-            <li>You have <strong>30 minutes</strong> of prep time each morning.</li>
-            <li>Use the <strong>[+]</strong> and <strong>[-]</strong> buttons to allocate time between Burgers and Fries.</li>
-            <li><strong>Goal:</strong> Sell "Combos". A Combo requires exactly <strong>1 Burger + 1 Fry</strong>.</li>
-            <li>Your production speed changes every round! Check the top bar.</li>
-            <li>You have <strong>2 Minutes</strong> to complete your decision.</li>
+        <h1 style="text-align: center;">Food Truck: Trade Edition</h1>
+        <p>In this version, you are not alone! You have a neighbor.</p>
+        <ul>
+            <li><strong>Production:</strong> Allocate your 30 minutes.</li>
+            <li><strong>Trade:</strong> You can exchange Burgers for Fries with your neighbor.</li>
+            <li><strong>Proposals:</strong> Your neighbor might send you offers, or you can send them offers.</li>
         </ul>
-
-        <div style="text-align: center;">
-            <button class="action-btn" onclick="startGame()">Start Game</button>
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="action-btn" onclick="startGame()">Find a Partner & Start</button>
         </div>
     </div>
 </div>
 
 <div id="screen-game" class="container hidden">
     
-    <div class="prod-bar-container">
-        <div class="prod-label">Your Per Minute Production (Round <span id="round-num">1</span>/2):</div>
-        <div class="prod-bar">
-            <span><span id="rate-f">8</span> Fries</span>
-            <span style="font-size: 14px; color: #999;">-or-</span>
-            <span><span id="rate-b">4</span> Burgers</span>
-        </div>
+    <div class="prod-bar">
+        <span>Your Rate: <span id="rate-f">8</span> Fries OR <span id="rate-b">4</span> Burgers / min</span>
     </div>
 
     <div class="game-layout">
         <div class="prep-box">
-            <div class="section-title">Prep Time</div>
+            <h3 style="color:var(--blue-border); margin-top:0;">Prep Time</h3>
             
             <div class="input-group">
                 <button class="control-btn" onclick="adjustTime('burgers', -1)">-</button>
-                <div class="time-display"><span id="time-b">15</span> min</div>
+                <div style="font-weight:bold; font-size:20px;"><span id="time-b">15</span> min</div>
                 <button class="control-btn" onclick="adjustTime('burgers', 1)">+</button>
             </div>
-
+            
             <div class="input-group">
                 <button class="control-btn" onclick="adjustTime('fries', -1)">-</button>
-                <div class="time-display"><span id="time-f">15</span> min</div>
+                <div style="font-weight:bold; font-size:20px;"><span id="time-f">15</span> min</div>
                 <button class="control-btn" onclick="adjustTime('fries', 1)">+</button>
             </div>
             
-            <p style="font-size: 14px; color: #555; text-align: center;">Total time must equal 30 min</p>
+            <div style="text-align:center; color:#666;">
+                <small>Partner: <span id="partner-name">Searching...</span></small>
+            </div>
         </div>
 
-        <div class="prepare-col">
-            <div class="section-title">Prepare</div>
-
-            <div class="output-row">
-                <div class="food-icon">🍔</div>
-                <div class="output-display" id="out-b">60</div>
+        <div class="output-box">
+            <h3 style="color:var(--blue-border); margin-top:0;">Inventory (Production + Trade)</h3>
+            
+            <div class="inventory-row">
+                <span>🍔 Burgers</span>
+                <span>
+                    <span id="inv-b">60</span> 
+                    <span id="diff-b" class="trade-diff"></span>
+                </span>
+            </div>
+            <div class="inventory-row">
+                <span>🍟 Fries</span>
+                <span>
+                    <span id="inv-f">120</span>
+                    <span id="diff-f" class="trade-diff"></span>
+                </span>
             </div>
 
-            <div class="output-row">
-                <div class="food-icon">🍟</div>
-                <div class="output-display" id="out-f">120</div>
+            <div class="btn-row">
+                <button class="action-btn btn-dark" onclick="openProposeModal()">Propose Trade</button>
+                <button class="action-btn" onclick="submitRound()">Bring <span id="combo-count">60</span> Combos</button>
             </div>
         </div>
     </div>
+</div>
 
-    <div style="text-align: center;">
-        <button class="action-btn" onclick="submitRound()">
-            Bring <span id="combo-count">60</span> Combos
-        </button>
+<div id="modal-propose" class="modal-overlay hidden">
+    <div class="trade-card">
+        <div class="trade-header">
+            <span>🚚 You</span>
+            <span>Propose a Trade</span>
+            <span>Neighbor 🚚</span>
+        </div>
+        <div class="trade-body">
+            <div class="trade-item">
+                <div class="food-icon-lg">🍔</div>
+                <div>You Give</div>
+                <div class="spinner-box">
+                    <button class="spin-btn" onclick="adjustOffer('give', 1)">▲</button>
+                    <input id="offer-give-val" class="spin-val" value="5" readonly>
+                    <button class="spin-btn" onclick="adjustOffer('give', -1)">▼</button>
+                </div>
+                <select id="offer-give-type" style="margin-top:5px; padding:5px; width:100%;">
+                    <option value="burgers">Burgers</option>
+                    <option value="fries">Fries</option>
+                </select>
+            </div>
+
+            <div style="font-weight:bold; color:#aaa;">FOR</div>
+
+            <div class="trade-item">
+                <div class="food-icon-lg">🍟</div>
+                <div>You Get</div>
+                <div class="spinner-box">
+                    <button class="spin-btn" onclick="adjustOffer('get', 1)">▲</button>
+                    <input id="offer-get-val" class="spin-val" value="5" readonly>
+                    <button class="spin-btn" onclick="adjustOffer('get', -1)">▼</button>
+                </div>
+                <select id="offer-get-type" style="margin-top:5px; padding:5px; width:100%;">
+                    <option value="fries">Fries</option>
+                    <option value="burgers">Burgers</option>
+                </select>
+            </div>
+        </div>
+        <div class="trade-actions">
+            <button class="modal-btn btn-accept" onclick="sendProposal()">Send Proposal</button>
+            <button class="modal-btn btn-decline" onclick="closeModal('modal-propose')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-incoming" class="modal-overlay hidden">
+    <div class="trade-card" style="border: 4px solid var(--teal-btn);">
+        <div class="trade-header" style="background:var(--teal-btn); color:white;">
+            <span>🔔 New Proposal!</span>
+        </div>
+        <div class="trade-body">
+            <div class="trade-item">
+                <div class="food-icon-lg" id="inc-give-icon">🍟</div>
+                <div>Neighbor Gives</div>
+                <h1 id="inc-give-amt">8</h1>
+                <div id="inc-give-name">Fries</div>
+            </div>
+            
+            <div style="font-weight:bold; color:#aaa;">FOR</div>
+
+            <div class="trade-item">
+                <div class="food-icon-lg" id="inc-get-icon">🍔</div>
+                <div>You Give</div>
+                <h1 id="inc-get-amt">4</h1>
+                <div id="inc-get-name">Burgers</div>
+            </div>
+        </div>
+        <div class="trade-actions">
+            <button class="modal-btn btn-accept" onclick="acceptIncoming()">Accept</button>
+            <button class="modal-btn btn-decline" onclick="declineIncoming()">Decline</button>
+        </div>
     </div>
 </div>
 
 <div id="modal-result" class="modal-overlay hidden">
-    <div class="result-card">
-        <h2 style="color: var(--teal-btn); margin-top:0;">Round Complete!</h2>
-        
-        <div class="stats-table">
-            <div class="stats-row">
-                <span>Your Combos:</span>
-                <strong style="color: var(--teal-btn);" id="res-score">0</strong>
-            </div>
-            <div class="stats-row">
-                <span>Optimal Possible:</span>
-                <span id="res-opt">0</span>
-            </div>
-        </div>
-        
-        <p id="res-msg" style="margin: 20px 0; color: #555; font-weight: bold;">Great work!</p>
-
-        <button class="action-btn" id="btn-next" onclick="nextRound()" style="padding: 10px 40px; font-size: 16px; width: auto;">Next Round >></button>
+    <div class="trade-card" style="padding: 20px;">
+        <h2 style="color:var(--teal-btn);">Round Complete</h2>
+        <h1><span id="res-score">0</span> Combos</h1>
+        <p id="res-msg"></p>
+        <button class="action-btn" onclick="location.reload()">Next Round</button>
     </div>
 </div>
 
 <div class="status-bar">
     <div>Simulation Active</div>
-    <div class="timer-box">Time Remaining: <span id="timer">02:00</span></div>
+    <div id="timer">02:00</div>
 </div>
 
 <script>
     // --- GAME STATE ---
-    const TOTAL_TIME_MINS = 30; // Production time
-    const ROUND_LIMIT_SEC = 120; // 2 minutes real time
-    const TOTAL_ROUNDS = 2;
+    let timeB = 15, timeF = 15;
+    let rateB = 4, rateF = 8;
+    let productionB = 0, productionF = 0;
     
-    let currentRound = 1;
-    let timeBurgers = 15;
-    let timeFries = 15;
-    let rateB = 4;
-    let rateF = 8;
+    // Trade Tracking
+    let netTradeB = 0; // Positive = gained, Negative = lost
+    let netTradeF = 0;
 
-    // Timer variables
-    let timerInterval;
-    let timeLeft = ROUND_LIMIT_SEC;
+    // Bot State
+    let botRateB = 8, botRateF = 2; // Bot is opposite of player
+    let botName = "Truck_" + Math.floor(Math.random() * 900 + 100);
+    let botInterval;
+    let currentBotOffer = null; // Store active offer data
 
-    // --- INITIALIZATION ---
+    // --- INIT ---
     function startGame() {
         document.getElementById('screen-intro').classList.add('hidden');
         document.getElementById('screen-game').classList.remove('hidden');
-        setupRound();
-    }
+        document.getElementById('partner-name').innerText = "Connected to: " + botName;
+        
+        // Randomize Player Rates
+        rateB = (Math.floor(Math.random() * 3) + 1) * 2; // 2, 4, 6
+        rateF = (Math.floor(Math.random() * 3) + 3) * 2; // 6, 8, 10
+        // Ensure Bot is different (Opposite Comparative Advantage)
+        botRateB = rateF; 
+        botRateF = rateB;
 
-    function setupRound() {
-        // 1. Reset Time and Production
-        timeBurgers = 15;
-        timeFries = 15;
-
-        // 2. Randomize Productivity (Even numbers between 2 and 10)
-        // We use a loop to ensure rateB != rateF to keep the optimization interesting
-        do {
-            rateB = (Math.floor(Math.random() * 5) + 1) * 2; 
-            rateF = (Math.floor(Math.random() * 5) + 1) * 2;
-        } while (rateB === rateF);
-
-        // 3. Update UI Text
-        document.getElementById('round-num').innerText = currentRound;
         document.getElementById('rate-b').innerText = rateB;
         document.getElementById('rate-f').innerText = rateF;
         
-        updateUI();
-
-        // 4. Start Countdown Timer
+        updateEngine();
+        
+        // Start Bot Logic: Bot proposes a trade every 15-25 seconds
+        botInterval = setInterval(triggerBotProposal, 15000 + Math.random() * 10000);
+        
+        // Start Timer
         startTimer();
     }
 
-    // --- TIMER LOGIC ---
-    function startTimer() {
-        timeLeft = ROUND_LIMIT_SEC;
-        updateTimerDisplay();
+    // --- CORE ENGINE ---
+    function adjustTime(type, val) {
+        if(type === 'burgers') {
+            if(val > 0 && timeF > 0) { timeB++; timeF--; }
+            if(val < 0 && timeB > 0) { timeB--; timeF++; }
+        } else {
+            if(val > 0 && timeB > 0) { timeF++; timeB--; }
+            if(val < 0 && timeF > 0) { timeF--; timeB++; }
+        }
+        updateEngine();
+    }
+
+    function updateEngine() {
+        // 1. Calculate Production
+        productionB = timeB * rateB;
+        productionF = timeF * rateF;
         
-        clearInterval(timerInterval); // clear any existing
-        timerInterval = setInterval(() => {
-            timeLeft--;
-            updateTimerDisplay();
-            
-            if (timeLeft <= 0) {
-                clearInterval(timerInterval);
-                alert("Time's up! Submitting your current production.");
+        // 2. Update UI Times
+        document.getElementById('time-b').innerText = timeB;
+        document.getElementById('time-f').innerText = timeF;
+
+        // 3. Calculate Final Inventory (Prod + Net Trade)
+        let finalB = productionB + netTradeB;
+        let finalF = productionF + netTradeF;
+
+        // Prevent Negative Inventory (Undo trade logic if needed, but for simplicity we clamp to 0 visually)
+        if(finalB < 0) finalB = 0;
+        if(finalF < 0) finalF = 0;
+
+        document.getElementById('inv-b').innerText = finalB;
+        document.getElementById('inv-f').innerText = finalF;
+
+        // 4. Show Trade Diff
+        let diffBEl = document.getElementById('diff-b');
+        let diffFEl = document.getElementById('diff-f');
+        
+        diffBEl.innerText = netTradeB !== 0 ? (netTradeB > 0 ? `(+${netTradeB})` : `(${netTradeB})`) : "";
+        diffBEl.className = netTradeB >= 0 ? "trade-diff diff-pos" : "trade-diff diff-neg";
+        
+        diffFEl.innerText = netTradeF !== 0 ? (netTradeF > 0 ? `(+${netTradeF})` : `(${netTradeF})`) : "";
+        diffFEl.className = netTradeF >= 0 ? "trade-diff diff-pos" : "trade-diff diff-neg";
+
+        // 5. Combos
+        document.getElementById('combo-count').innerText = Math.min(finalB, finalF);
+    }
+
+    // --- PLAYER PROPOSALS ---
+    function openProposeModal() {
+        document.getElementById('modal-propose').classList.remove('hidden');
+    }
+
+    function adjustOffer(side, delta) {
+        let el = document.getElementById('offer-' + side + '-val');
+        let val = parseInt(el.value) + delta;
+        if(val < 1) val = 1;
+        el.value = val;
+    }
+
+    function sendProposal() {
+        // Simply Accept/Decline Logic for Bot
+        // Bot accepts if the user offers a "Good Deal"
+        // A Good Deal is defined loosely as: Giving the Bot what the Bot is bad at producing.
+        
+        let giveType = document.getElementById('offer-give-type').value; // User Gives
+        let getType = document.getElementById('offer-get-type').value;   // User Gets
+        let giveAmt = parseInt(document.getElementById('offer-give-val').value);
+        let getAmt = parseInt(document.getElementById('offer-get-val').value);
+
+        // Bot Logic:
+        // Bot likes Burgers if Bot is bad at Burgers.
+        // Bot is bad at Burgers if botRateB < botRateF.
+        let botWants = (botRateB < botRateF) ? 'burgers' : 'fries';
+        
+        let accepted = false;
+        
+        // 1. Does user give what bot wants?
+        if(giveType === botWants) {
+            // 2. Is the price okay? (Bot shouldn't pay more than its own opportunity cost)
+            // Simple heuristic: Bot accepts if ratio is reasonable (e.g., < 2:1)
+            if (getAmt / giveAmt < 2.5) accepted = true;
+        }
+
+        // Check if Player actually has the goods
+        let playerHas = (giveType === 'burgers') ? (productionB + netTradeB) : (productionF + netTradeF);
+        if(playerHas < giveAmt) {
+            alert("You don't have enough " + giveType + " to offer!");
+            return;
+        }
+
+        closeModal('modal-propose');
+
+        if(accepted) {
+            alert(botName + " ACCEPTED your offer!");
+            if(giveType === 'burgers') { netTradeB -= giveAmt; netTradeF += getAmt; }
+            else { netTradeF -= giveAmt; netTradeB += getAmt; }
+            updateEngine();
+        } else {
+            alert(botName + " DECLINED. They don't want that deal.");
+        }
+    }
+
+    // --- BOT PROPOSALS ---
+    function triggerBotProposal() {
+        if(!document.getElementById('modal-propose').classList.contains('hidden')) return; // Don't interrupt user
+        if(!document.getElementById('modal-result').classList.contains('hidden')) return;
+
+        // Bot generates offer based on its surplus
+        // Bot gives what it is good at.
+        let botGoodAt = (botRateB > botRateF) ? 'Burgers' : 'Fries';
+        let botBadAt = (botGoodAt === 'Burgers') ? 'Fries' : 'Burgers';
+
+        // Offer: Bot gives 5 Good for 3 Bad (Just an example ratio)
+        let offerGive = Math.floor(Math.random() * 3) + 4; // 4 to 6
+        let offerGet = Math.floor(Math.random() * 3) + 2;  // 2 to 4
+
+        currentBotOffer = {
+            giveName: botGoodAt,
+            giveAmt: offerGive,
+            getName: botBadAt,
+            getAmt: offerGet
+        };
+
+        // Update UI
+        document.getElementById('inc-give-icon').innerText = (botGoodAt === 'Burgers') ? '🍔' : '🍟';
+        document.getElementById('inc-give-name').innerText = botGoodAt;
+        document.getElementById('inc-give-amt').innerText = offerGive;
+
+        document.getElementById('inc-get-icon').innerText = (botBadAt === 'Burgers') ? '🍔' : '🍟';
+        document.getElementById('inc-get-name').innerText = botBadAt;
+        document.getElementById('inc-get-amt').innerText = offerGet;
+
+        document.getElementById('modal-incoming').classList.remove('hidden');
+    }
+
+    function acceptIncoming() {
+        // User pays "GetAmt" (what bot wants)
+        // User receives "GiveAmt" (what bot gives)
+        let payAmt = currentBotOffer.getAmt;
+        let payType = currentBotOffer.getName;
+        let receiveAmt = currentBotOffer.giveAmt;
+        let receiveType = currentBotOffer.giveName;
+
+        // Check funds
+        let playerHas = (payType === 'Burgers') ? (productionB + netTradeB) : (productionF + netTradeF);
+        
+        if(playerHas < payAmt) {
+            alert("You cannot accept! Insufficient inventory.");
+            return;
+        }
+
+        // Execute
+        if(payType === 'Burgers') {
+            netTradeB -= payAmt;
+            netTradeF += receiveAmt;
+        } else {
+            netTradeF -= payAmt;
+            netTradeB += receiveAmt;
+        }
+
+        updateEngine();
+        closeModal('modal-incoming');
+    }
+
+    function declineIncoming() {
+        closeModal('modal-incoming');
+    }
+
+    // --- UTILS ---
+    function closeModal(id) {
+        document.getElementById(id).classList.add('hidden');
+    }
+
+    function submitRound() {
+        clearInterval(botInterval);
+        let final = document.getElementById('combo-count').innerText;
+        document.getElementById('res-score').innerText = final;
+        
+        // Simple feedback
+        let msg = (parseInt(final) > 40) ? "Excellent trading strategy!" : "Tip: Try to trade for items that are hard for you to make.";
+        document.getElementById('res-msg').innerText = msg;
+        
+        document.getElementById('modal-result').classList.remove('hidden');
+    }
+
+    function startTimer() {
+        let sec = 120;
+        let timerInt = setInterval(() => {
+            sec--;
+            let m = Math.floor(sec/60);
+            let s = sec%60;
+            document.getElementById('timer').innerText = `0${m}:${s<10?'0'+s:s}`;
+            if(sec <= 0) {
+                clearInterval(timerInt);
                 submitRound();
             }
         }, 1000);
     }
-
-    function updateTimerDisplay() {
-        let minutes = Math.floor(timeLeft / 60);
-        let seconds = timeLeft % 60;
-        // Pad with leading zero
-        let mStr = minutes < 10 ? "0" + minutes : minutes;
-        let sStr = seconds < 10 ? "0" + seconds : seconds;
-        document.getElementById('timer').innerText = `${mStr}:${sStr}`;
-    }
-
-    // --- CORE GAME LOGIC ---
-    function adjustTime(item, amount) {
-        if (item === 'burgers') {
-            if (amount > 0 && timeFries > 0) {
-                timeBurgers++;
-                timeFries--;
-            } else if (amount < 0 && timeBurgers > 0) {
-                timeBurgers--;
-                timeFries++;
-            }
-        } else { // Item is fries
-            if (amount > 0 && timeBurgers > 0) {
-                timeFries++;
-                timeBurgers--;
-            } else if (amount < 0 && timeFries > 0) {
-                timeFries--;
-                timeBurgers++;
-            }
-        }
-        updateUI();
-    }
-
-    function updateUI() {
-        document.getElementById('time-b').innerText = timeBurgers;
-        document.getElementById('time-f').innerText = timeFries;
-
-        let prodB = timeBurgers * rateB;
-        let prodF = timeFries * rateF;
-        
-        document.getElementById('out-b').innerText = prodB;
-        document.getElementById('out-f').innerText = prodF;
-
-        let combos = Math.min(prodB, prodF);
-        document.getElementById('combo-count').innerText = combos;
-    }
-
-    // --- SCORING & RESULTS ---
-    function submitRound() {
-        clearInterval(timerInterval); // Stop timer
-
-        let finalScore = Math.min(timeBurgers * rateB, timeFries * rateF);
-        
-        // Calculate Optimal Score
-        let bestScore = 0;
-        for(let t=0; t<=30; t++) {
-            let s = Math.min(t*rateB, (30-t)*rateF);
-            if(s > bestScore) bestScore = s;
-        }
-
-        // POPULATE RESULTS (Rank Removed)
-        document.getElementById('res-score').innerText = finalScore;
-        document.getElementById('res-opt').innerText = bestScore;
-        
-        if(finalScore === bestScore) {
-            document.getElementById('res-msg').innerText = "Perfect! You maximized production.";
-            document.getElementById('res-msg').style.color = "green";
-        } else {
-            document.getElementById('res-msg').innerText = `You could have produced more (${bestScore}). Try to equate Burgers and Fries!`;
-            document.getElementById('res-msg').style.color = "#D35400";
-        }
-
-        document.getElementById('modal-result').classList.remove('hidden');
-
-        // Logic for "Finish Game" vs "Next Round"
-        let btn = document.getElementById('btn-next');
-        if(currentRound >= TOTAL_ROUNDS) {
-            btn.innerText = "Finish Game";
-            btn.onclick = function() { location.reload(); }; 
-        } else {
-            btn.innerText = "Next Round >>";
-            btn.onclick = nextRound;
-        }
-    }
-
-    function nextRound() {
-        document.getElementById('modal-result').classList.add('hidden');
-        currentRound++;
-        setupRound();
-    }
-
 </script>
 
 </body>
